@@ -1,0 +1,26 @@
+# Use the official Python 3.10 image as a parent image
+FROM python:3.10
+
+# Set the working directory in the container
+WORKDIR /usr/mercury_graph
+
+# Copy the current directory contents into the container at /usr/mercury_graph
+COPY . .
+
+# Install any needed packages specified in requirements.txt
+RUN pip install --upgrade pip
+RUN pip install --no-cache-dir pyspark
+RUN pip install numpy
+RUN pip install pandas
+RUN pip install requests
+RUN pip install jupyterlab
+RUN pip install networkx[default]
+
+# Make port 9876 available to the world outside this container
+EXPOSE 9876
+
+# Define environment variable
+ENV NAME World
+
+# Override the default command to start a bash shell
+CMD ["/bin/bash"]
