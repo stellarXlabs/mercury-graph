@@ -32,7 +32,7 @@ pip install .
 
 Additionally, the port 9876 (both in the docker and locally) is exposed to allow its use for jupyter lab.
 
-For your convenience, you can use the script `./start_jupyter.sh` to start jupyter lab in the docker container. This script contains
+For your convenience, you can use the script `./start_jupyter.sh` to start jupyter lab in the docker container. This script contains:
 
 ```bash
 cd tutorials
@@ -41,5 +41,5 @@ jupyter labextension disable "@jupyterlab/apputils-extension:announcements"
 jupyter lab --ip=0.0.0.0 --port=9876 --allow-root --NotebookApp.token='' --NotebookApp.password=''
 ```
 
-Your jupyter lab will be available at `http://localhost:9876` without security tokens. Make sure you are in a network you trust before
+Your jupyter lab will be available at `http://127.0.0.1:9876/lab` without security tokens. Make sure you are in a network you trust before
 running this command.
