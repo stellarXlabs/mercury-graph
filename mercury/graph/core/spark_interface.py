@@ -9,7 +9,7 @@ if find_spark is None:
 else:
     pyspark_installed = True
 
-    from pyspark.sql import SparkSession
+    import pyspark
 
     find_graphframes = importlib.util.find_spec('graphframes')
 
@@ -62,9 +62,12 @@ class SparkInterface:
     _graphframes = None     # Class variable to hold the shared graphframes namespace
 
 
-    def __init__(self, config=None):
+    def __init__(self, config=None, session=None):
         if SparkInterface._spark_session is None:
-            SparkInterface._spark_session = self._create_spark_session(config)
+            if session is not None:
+                SparkInterface._spark_session = session
+            else:
+                SparkInterface._spark_session = self._create_spark_session(config)
 
         if SparkInterface._graphframes is None and graphframes_installed:
             SparkInterface._graphframes = gf
@@ -75,7 +78,7 @@ class SparkInterface:
         if config is None:
             config = default_spark_config
 
-        spark_builder = SparkSession.builder
+        spark_builder = pyspark.sql.SparkSession.builder
 
         for key, value in config.items():
             spark_builder = spark_builder.config(key, value)
@@ -91,6 +94,16 @@ class SparkInterface:
     @property
     def graphframes(self):
         return SparkInterface._graphframes
+
+
+    @property
+    def type_spark_dataframe(self):
+        return pyspark.sql.dataframe.DataFrame
+
+
+    @property
+    def type_graphframe(self):
+        return gf.graphframe.GraphFrame
 
 
     def read_csv(self, path, **kwargs):
