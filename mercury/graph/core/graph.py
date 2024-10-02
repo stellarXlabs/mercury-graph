@@ -168,13 +168,19 @@ class Graph:
 
 
     def __str__(self):
-        # TODO: This
-        return '.'
+        txt = []
+        txt.append('mercury.graph.core.Graph with %d nodes and %d edges.' % (self._number_of_nodes, self._number_of_edges))
+        txt.append('  is_directed:    %s' % self._is_directed)
+        txt.append('  is_weighted:    %s' % self._is_weighted)
+        txt.append('  has_networkx:   %s' % (self._as_networkx is not None))
+        txt.append('  has_graphframe: %s' % (self._as_graphframe is not None))
+        txt.append('  has_dgl:        %s' % (self._as_dgl is not None))
+
+        return '\n'.join(txt)
 
 
     def __repr__(self):
-        # TODO: This
-        return '.'
+        return 'Graph(%s)' % ', '.join('%s = %s' % (k, v) for k, v in self._init_values.items())
 
 
     @property
