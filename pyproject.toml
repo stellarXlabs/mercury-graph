@@ -20,3 +20,7 @@ package-dir		= {'' = 'mercury'}
 
 [tool.setuptools.packages.find]
 where			= ['mercury']
+
+[tool.pytest.ini_options]
+norecursedirs 	= [".venv", ".tox"]
+testpaths 		= ["tests"]
