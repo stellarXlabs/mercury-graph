@@ -1,6 +1,9 @@
 import pandas as pd
 import networkx as nx
 
+from mercury.graph.core.spark_interface import SparkInterface, pyspark_installed, graphframes_installed, dgl_installed
+
+
 class NodeIterator:
     def __init__(self, graph):
         self.graph = graph
@@ -78,7 +81,7 @@ class Graph:
     - A graphframes graph
     - A binary serialization of the object storing all its state.
 
-    Bear in mind that the graph object is inmutable. This means that you can't modify the graph object once it has been created. If you
+    Bear in mind that the graph object is immutable. This means that you can't modify the graph object once it has been created. If you
     want to modify it, you have to create a new graph object.
 
     The graph object provides:
@@ -104,12 +107,14 @@ class Graph:
         self._number_of_nodes = 0
         self._number_of_edges = 0
         self._node_ix = 0
+        self._is_directed = False
+        self._is_weighted = False
 
         if type(data) == pd.core.frame.DataFrame:
             self._from_pandas(data, nodes, keys)
             return
 
-        if type(data) == nx.classes.graph.Graph:
+        if isinstance(data, nx.Graph):      # This is the most general case, including: ...Graph, ...DiGraph and ...MultiGraph
             self._from_networkx(data)
             return
 
@@ -124,14 +129,6 @@ class Graph:
         self._from_binary(data)
 
 
-    def __iter__(self):
-        return self
-
-
-    def __len__(self):
-        return self._number_of_nodes
-
-
     def __str__(self):
         # TODO: This
         return '.'
@@ -142,41 +139,14 @@ class Graph:
         return '.'
 
 
-    def __next__(self):
-        if self._node_ix < 0 or self._node_ix >= self._number_of_nodes:
-            self._node_ix = -1
-
-        node_id = self._node_id(self._node_ix)
-        self._node_ix += 1
-
-        if self._node_ix == self._number_of_nodes:
-            raise StopIteration
-
-        return node_id
+    @property
+    def nodes(self):
+        return NodeIterator(self)
 
 
-    def __del__(self):
-        # TODO: This
-        return
-
-
-    def __getstate__(self):
-        """ Used by pickle.dump() (See https://docs.python.org/3/library/pickle.html)
-        """
-        # TODO: This
-        return '.'
-
-
-    def __setstate__(self, state):
-        """ Used by pickle.load() (See https://docs.python.org/3/library/pickle.html)
-        """
-        # TODO: This
-        return
-
-
-    def __deepcopy__(self, memo):
-        # TODO: This
-        return
+    @property
+    def edges(self):
+        return EdgeIterator(self)
 
 
     @property
@@ -269,69 +239,202 @@ class Graph:
         return self._number_of_edges
 
 
+    @property
+    def is_directed(self):
+        return self._is_directed
+
+
+    @property
+    def is_weighted(self):
+        return self._is_weighted
+
+
     def nodes_as_pandas(self):
-        # TODO: This
-        pass
+        if self._as_networkx is not None:
+            nodes_data = self._as_networkx.nodes(data = True)
+            nodes_df   = pd.DataFrame([(node, attr) for node, attr in nodes_data], columns = ['id', 'attributes'])
+            attrs_df   = pd.json_normalize(nodes_df['attributes'])
+
+            return pd.concat([nodes_df.drop('attributes', axis = 1), attrs_df], axis = 1)
+
+        return self.graphframe.vertices.toPandas()
 
 
     def edges_as_pandas(self):
-        # TODO: This
-        pass
+        if self._as_networkx is not None:
+            edges_data = self._as_networkx.edges(data = True)
+            edges_df   = pd.DataFrame([(src, dst, attr) for src, dst, attr in edges_data], columns = ['src', 'dst', 'attributes'])
+            attrs_df   = pd.json_normalize(edges_df['attributes'])
+
+            return pd.concat([edges_df.drop('attributes', axis = 1), attrs_df], axis = 1)
+
+        return self.graphframe.edges.toPandas()
 
 
     def nodes_as_dataframe(self):
-        # TODO: This
-        pass
+        if self._as_graphframe is not None:
+            return self._as_graphframe.vertices
+
+        return SparkInterface().spark.createDataFrame(self.nodes_as_pandas())
 
 
     def edges_as_dataframe(self):
-        # TODO: This
-        pass
+        if self._as_graphframe is not None:
+            return self._as_graphframe.edges
 
-
-    def as_binary(self):
-       # TODO: This
-        pass
+        return SparkInterface().spark.createDataFrame(self.edges_as_pandas())
 
 
     def _from_pandas(self, edges, nodes, keys):
-        # TODO: This
-        pass
+        """ This internal method extends the constructor to accept a pandas DataFrame as input.
+
+        It takes the constructor arguments and does not return anything. It sets the internal state of the object.
+        """
+        if keys is None:
+            src = 'src'
+            dst = 'dst'
+            id  = 'id'
+            weight = 'weight'
+            directed = True
+        else:
+            src = keys.get('src', 'src')
+            dst = keys.get('dst', 'dst')
+            id  = keys.get('id', 'id')
+            weight = keys.get('weight', 'weight')
+            directed = keys.get('directed', True)
+
+        if directed:
+            g = nx.DiGraph()
+        else:
+            g = nx.Graph()
+
+        self._is_weighted = weight in edges.columns
+
+        for _, row in edges.iterrows():
+            attr = row.drop([src, dst]).to_dict()
+            g.add_edge(row[src], row[dst], **attr)
+
+        if nodes is not None:
+            for _, row in nodes.iterrows():
+                attr = row.drop([id]).to_dict()
+                g.add_node(row[id], **attr)
+
+        self._from_networkx(g)
 
 
     def _from_dataframe(self, edges, nodes, keys):
-        # TODO: This
-        pass
+        """ This internal method extends the constructor to accept a pyspark DataFrame as input.
+
+        It takes the constructor arguments and does not return anything. It sets the internal state of the object.
+        """
+        if not graphframes_installed:
+            raise ImportError('graphframes is not installed')
+
+        if keys is None:
+            directed = True
+        else:
+            src = keys.get('src', 'src')
+            dst = keys.get('dst', 'dst')
+            id  = keys.get('id', 'id')
+            weight = keys.get('weight', 'weight')
+            directed = keys.get('directed', True)
+
+            edges = edges.withColumnRenamed(src, 'src').withColumnRenamed(dst, 'dst')
+
+            if weight in edges.columns:
+                self._is_weighted = True
+                edges = edges.withColumnRenamed(weight, 'weight')
+
+            if nodes is not None:
+                nodes = nodes.withColumnRenamed(id, 'id')
+            else:
+                src_nodes = edges.select(src).distinct().withColumnRenamed(src, id)
+                dst_nodes = edges.select(dst).distinct().withColumnRenamed(dst, id)
+                nodes = src_nodes.union(dst_nodes).distinct()
+
+        g = SparkInterface().graphframes.GraphFrame(nodes, edges)
+
+        if not directed:
+            edges = g.edges
+
+            other_columns = [col for col in edges.columns if col not in ('src', 'dst')]
+            reverse_edges = edges.select(edges['dst'].alias('src'), edges['src'].alias('dst'), *other_columns)
+            all_edges     = edges.union(reverse_edges).distinct()
+
+            g = SparkInterface().graphframes.GraphFrame(nodes, all_edges)
+
+            self._is_directed = False
+
+        self._from_graphframes(g)
 
 
     def _from_networkx(self, graph):
-        # TODO: This
-        pass
+        """ This internal method extends the constructor to accept a networkx graph as input.
+
+        It takes the constructor arguments and does not return anything. It sets the internal state of the object.
+        """
+        self._as_networkx = graph
+        self._number_of_nodes = len(graph.nodes)
+        self._number_of_edges = len(graph.edges)
+        self._is_directed = nx.is_directed(graph)
 
 
     def _from_graphframes(self, graph):
-        # TODO: This
-        pass
+        """ This internal method extends the constructor to accept a graphframes graph as input.
 
-
-    def _from_binary(self, data):
-        # TODO: This
-        pass
+        It takes the constructor arguments and does not return anything. It sets the internal state of the object.
+        """
+        self._as_graphframe = graph
+        self._number_of_nodes = graph.vertices.count()
+        self._number_of_edges = graph.edges.count()
 
 
     def _to_networkx(self):
-        # TODO: This
-        pass
+        """ This internal method handles the logic of a property. It returns the networkx graph that already exists
+        or converts it from the graphframes graph if not."""
+        if self._as_networkx is None:
+            self._as_networkx = nx.DiGraph()
+
+            for _, row in self.nodes_as_pandas().iterrows():
+                attr = row.drop(['src', 'dst']).to_dict()
+                self._as_networkx.add_edge(row['src'], row['dst'], **attr)
+
+            for _, row in self.edges_as_pandas().iterrows():
+                attr = row.drop(['id']).to_dict()
+                self._as_networkx.add_node(row['id'], **attr)
+
+        return self._as_networkx
 
 
     def _to_graphframe(self):
-        # TODO: This
-        pass
+        """ This internal method handles the logic of a property. It returns the graphframes graph that already exists
+        or converts it from the networkx graph if not."""
+        if self._as_graphframe is None:
+            nodes = self.nodes_as_dataframe()
+            edges = self.edges_as_dataframe()
+
+            self._as_graphframe = SparkInterface().graphframes.GraphFrame(nodes, edges)
+
+        return self._as_graphframe
 
 
     def _to_dgl(self):
-        # TODO: This
-        pass
+        """ This internal method handles the logic of a property. It returns the dgl graph that already exists
+        or converts it from the networkx graph if not."""
+        if self._as_dgl is None and dgl_installed:
+            dgl = SparkInterface().dgl
+
+            edge_attrs = [c for c in self.networkx.columns if c not in ['src', 'dst']]
+            if len(edge_attrs) > 0:
+                edge_attrs = None
+
+            node_attrs = [c for c in self.networkx.columns if c not in ['id']]
+            if len(node_attrs) > 0:
+                node_attrs = None
+
+            self._as_dgl = dgl.from_networkx(self.networkx, edge_attrs = edge_attrs, node_attrs = node_attrs)
+
+        return self._as_dgl
 
 
     def _calculate_degree(self):
