@@ -5,6 +5,23 @@ from mercury.graph.core.spark_interface import SparkInterface, pyspark_installed
 
 
 class NodeIterator:
+    """
+    Iterator class for iterating over the nodes in a `mercury.graph.core.Graph`.
+
+    This is returned by the `nodes` property of the `mercury.graph.core.Graph` class.
+
+    Args:
+        graph: The `mercury.graph.core.Graph` object to iterate over.
+
+    Usage:
+
+    ```python
+    g = mg.Graph(data)
+    for node in g.nodes:
+        print(node)
+    ```
+    """
+
     def __init__(self, graph):
         self.graph = graph
         self.ix = -1
@@ -37,6 +54,23 @@ class NodeIterator:
 
 
 class EdgeIterator:
+    """
+    Iterator class for iterating over the edges in a `mercury.graph.core.Graph`.
+
+    This is returned by the `edges` property of the `mercury.graph.core.Graph` class.
+
+    Args:
+        graph: The `mercury.graph.core.Graph` object to iterate over.
+
+    Usage:
+
+    ```python
+    g = mg.Graph(data)
+    for edge in g.edges:
+        print(edge)
+    ```
+    """
+
     def __init__(self, graph):
         self.graph = graph
         self.ix = -1
