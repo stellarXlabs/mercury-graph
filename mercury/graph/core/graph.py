@@ -1,3 +1,5 @@
+import inspect
+
 import pandas as pd
 import networkx as nx
 
@@ -109,11 +111,10 @@ class Graph:
     This class seamlessly abstracts the underlying technology used to represent the graph. You can create a graph passing the following
     objects to the constructor:
 
-    - A pandas DataFrame containing edges (with a keys dictionary to specify the columns)
-    - A pyspark DataFrame containing edges (with a keys dictionary to specify the columns)
+    - A pandas DataFrame containing edges (with a keys dictionary to specify the columns and possibly a nodes DataFrame)
+    - A pyspark DataFrame containing edges (with a keys dictionary to specify the columns and possibly a nodes DataFrame)
     - A networkx graph
     - A graphframes graph
-    - A binary serialization of the object storing all its state.
 
     Bear in mind that the graph object is immutable. This means that you can't modify the graph object once it has been created. If you
     want to modify it, you have to create a new graph object.
@@ -125,7 +126,6 @@ class Graph:
     - It is inherited by other graph classes in mercury-graph providing ML algorithms such as graph embedding, visualization, etc.
     """
     def __init__(self, data = None, keys = None, nodes = None):
-        self._built = False
         self._as_networkx = None
         self._as_graphframe = None
         self._as_dgl = None
@@ -144,6 +144,8 @@ class Graph:
         self._is_directed = False
         self._is_weighted = False
 
+        self._init_values = {k: v for k, v in locals().items() if k in inspect.signature(self.__init__).parameters}
+
         if type(data) == pd.core.frame.DataFrame:
             self._from_pandas(data, nodes, keys)
             return
@@ -156,11 +158,13 @@ class Graph:
 
         if pyspark_installed and type(data) == spark_int.type_spark_dataframe:
             self._from_dataframe(data, nodes, keys)
+            return
 
         if graphframes_installed and type(data) == spark_int.type_graphframe:
             self._from_graphframes(data)
+            return
 
-        self._from_binary(data)
+        raise ValueError('Invalid input data. (Expected: pandas DataFrame, a networkx Graph, a pyspark DataFrame, a graphframes Graph.)')
 
 
     def __str__(self):
