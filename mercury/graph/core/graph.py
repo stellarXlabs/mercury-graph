@@ -407,9 +407,7 @@ class Graph:
 
             g = SparkInterface().graphframes.GraphFrame(nodes, all_edges)
 
-            self._is_directed = False
-
-        self._from_graphframes(g)
+        self._from_graphframes(g, directed)
 
 
     def _from_networkx(self, graph):
@@ -423,7 +421,7 @@ class Graph:
         self._is_directed = nx.is_directed(graph)
 
 
-    def _from_graphframes(self, graph):
+    def _from_graphframes(self, graph, directed = True):
         """ This internal method extends the constructor to accept a graphframes graph as input.
 
         It takes the constructor arguments and does not return anything. It sets the internal state of the object.
@@ -431,6 +429,7 @@ class Graph:
         self._as_graphframe = graph
         self._number_of_nodes = graph.vertices.count()
         self._number_of_edges = graph.edges.count()
+        self._is_directed = directed
 
 
     def _to_networkx(self):
