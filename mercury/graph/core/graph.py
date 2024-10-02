@@ -374,6 +374,13 @@ class Graph:
 
 
     def nodes_as_pandas(self):
+        """
+        Returns the nodes as a pandas DataFrame.
+
+        If the graph is represented as a networkx graph, the nodes are extracted from it. Otherwise, the graphframes graph will be used.
+        This dataset may differ from possible pandas DataFrame passed to the constructor in the column names and order. The column used
+        as the node id is always named 'id'.
+        """
         if self._as_networkx is not None:
             nodes_data = self._as_networkx.nodes(data = True)
             nodes_df   = pd.DataFrame([(node, attr) for node, attr in nodes_data], columns = ['id', 'attributes'])
@@ -385,6 +392,13 @@ class Graph:
 
 
     def edges_as_pandas(self):
+        """
+        Returns the edges as a pandas DataFrame.
+
+        If the graph is represented as a networkx graph, the edges are extracted from it. Otherwise, the graphframes graph will be used.
+        This dataset may differ from possible pandas DataFrame passed to the constructor in the column names and order. The columns used
+        as the source and destination nodes are always named 'src' and 'dst', respectively.
+        """
         if self._as_networkx is not None:
             edges_data = self._as_networkx.edges(data = True)
             edges_df   = pd.DataFrame([(src, dst, attr) for src, dst, attr in edges_data], columns = ['src', 'dst', 'attributes'])
@@ -396,6 +410,13 @@ class Graph:
 
 
     def nodes_as_dataframe(self):
+        """
+        Returns the nodes as a pyspark DataFrame.
+
+        If the graph is represented as a graphframes graph, the nodes are extracted from it. Otherwise, the nodes are converted from the
+        pandas DataFrame representation. The column used as the node id is always named 'id', regardless of the original column name passed
+        to the constructor.
+        """
         if self._as_graphframe is not None:
             return self._as_graphframe.vertices
 
@@ -403,6 +424,13 @@ class Graph:
 
 
     def edges_as_dataframe(self):
+        """
+        Returns the edges as a pyspark DataFrame.
+
+        If the graph is represented as a graphframes graph, the edges are extracted from it. Otherwise, the edges are converted from the
+        pandas DataFrame representation. The columns used as the source and destination nodes are always named 'src' and 'dst',
+        respectively, regardless of the original column names passed to the constructor.
+        """
         if self._as_graphframe is not None:
             return self._as_graphframe.edges
 
