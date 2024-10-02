@@ -124,6 +124,24 @@ class Graph:
     - Properties to access the graph in different formats (networkx, graphframes, dgl)
     - Properties with metrics and summary information that are calculated on demand and technology independent.
     - It is inherited by other graph classes in mercury-graph providing ML algorithms such as graph embedding, visualization, etc.
+
+    Args:
+		data: The data to create the graph from. It can be a pandas DataFrame, a networkx Graph, a pyspark DataFrame, or a Graphframe. In
+        	case it already contains a graph (networkx or graphframes), the keys and nodes arguments are ignored.
+		keys: A dictionary with keys to specify the columns in the data DataFrame. The keys are:
+			- 'src': The name of the column with the source node.
+			- 'dst': The name of the column with the destination node.
+			- 'id': The name of the column with the node id.
+			- 'weight': The name of the column with the edge weight.
+			- 'directed': A boolean to specify if the graph is directed. (Only for pyspark DataFrames)
+            When the keys argument is not provided or the key is missing, the default values are:
+            - 'src': 'src'
+            - 'dst': 'dst'
+            - 'id': 'id'
+            - 'weight': 'weight'
+            - 'directed': True
+		nodes: A pandas DataFrame or a pyspark DataFrame with the nodes data. (Only when `data` is pandas or pyspark DataFrame and with the
+        	same type as `data`) If not given, the nodes are inferred from the edges DataFrame.
     """
     def __init__(self, data = None, keys = None, nodes = None):
         self._as_networkx = None
