@@ -126,28 +126,30 @@ class Graph:
     - It is inherited by other graph classes in mercury-graph providing ML algorithms such as graph embedding, visualization, etc.
 
     Args:
-		data: The data to create the graph from. It can be a pandas DataFrame, a networkx Graph, a pyspark DataFrame, or a Graphframe. In
-        	case it already contains a graph (networkx or graphframes), the keys and nodes arguments are ignored.
-		keys: A dictionary with keys to specify the columns in the data DataFrame. The keys are:
-			- 'src': The name of the column with the source node.
-			- 'dst': The name of the column with the destination node.
-			- 'id': The name of the column with the node id.
-			- 'weight': The name of the column with the edge weight.
-			- 'directed': A boolean to specify if the graph is directed. (Only for pyspark DataFrames)
+        data: The data to create the graph from. It can be a pandas DataFrame, a networkx Graph, a pyspark DataFrame, or a Graphframe. In
+            case it already contains a graph (networkx or graphframes), the keys and nodes arguments are ignored.
+        keys: A dictionary with keys to specify the columns in the data DataFrame. The keys are:
+            - 'src': The name of the column with the source node.
+            - 'dst': The name of the column with the destination node.
+            - 'id': The name of the column with the node id.
+            - 'weight': The name of the column with the edge weight.
+            - 'directed': A boolean to specify if the graph is directed. (Only for pyspark DataFrames)
             When the keys argument is not provided or the key is missing, the default values are:
             - 'src': 'src'
             - 'dst': 'dst'
             - 'id': 'id'
             - 'weight': 'weight'
             - 'directed': True
-		nodes: A pandas DataFrame or a pyspark DataFrame with the nodes data. (Only when `data` is pandas or pyspark DataFrame and with the
-        	same type as `data`) If not given, the nodes are inferred from the edges DataFrame.
+        nodes: A pandas DataFrame or a pyspark DataFrame with the nodes data. (Only when `data` is pandas or pyspark DataFrame and with the
+            same type as `data`) If not given, the nodes are inferred from the edges DataFrame.
     """
     def __init__(self, data = None, keys = None, nodes = None):
         self._as_networkx = None
         self._as_graphframe = None
         self._as_dgl = None
         self._degree = None
+        self._in_degree = None
+        self._out_degree = None
         self._closeness_centrality = None
         self._betweenness_centrality = None
         self._pagerank = None
@@ -273,9 +275,23 @@ class Graph:
 
     @property
     def degree(self):
-        if self.degree is None:
-            self.degree = self._calculate_degree()
-        return self.degree
+        if self._degree is None:
+            self._degree = self._calculate_degree()
+        return self._degree
+
+
+    @property
+    def in_degree(self):
+        if self._in_degree is None:
+            self._in_degree = self._calculate_in_degree()
+        return self._in_degree
+
+
+    @property
+    def out_degree(self):
+        if self._out_degree is None:
+            self._out_degree = self._calculate_out_degree()
+        return self._out_degree
 
 
     @property
@@ -543,6 +559,7 @@ class Graph:
     def _to_networkx(self):
         """ This internal method handles the logic of a property. It returns the networkx graph that already exists
         or converts it from the graphframes graph if not."""
+
         if self._as_networkx is None:
             self._as_networkx = nx.DiGraph()
 
@@ -560,6 +577,7 @@ class Graph:
     def _to_graphframe(self):
         """ This internal method handles the logic of a property. It returns the graphframes graph that already exists
         or converts it from the networkx graph if not."""
+
         if self._as_graphframe is None:
             nodes = self.nodes_as_dataframe()
             edges = self.edges_as_dataframe()
@@ -572,6 +590,7 @@ class Graph:
     def _to_dgl(self):
         """ This internal method handles the logic of a property. It returns the dgl graph that already exists
         or converts it from the networkx graph if not."""
+
         if self._as_dgl is None and dgl_installed:
             dgl = SparkInterface().dgl
 
@@ -589,8 +608,42 @@ class Graph:
 
 
     def _calculate_degree(self):
-        # TODO: This
-        pass
+        """ This internal method handles the logic of a property. It returns the degree of each node in the graph."""
+
+        if self._as_networkx is not None:
+            return dict(self._as_networkx.degree())
+
+        return self._fill_node_zeros({row['id']: row['degree'] for row in self.graphframe.degrees.collect()})
+
+
+    def _calculate_in_degree(self):
+        """ This internal method handles the logic of a property. It returns the in-degree of each node in the graph."""
+
+        if self._as_networkx is not None:
+            return dict(self._as_networkx.in_degree())
+
+        return self._fill_node_zeros({row['id']: row['inDegree'] for row in self.graphframe.inDegrees.collect()})
+
+
+    def _calculate_out_degree(self):
+        """ This internal method handles the logic of a property. It returns the out-degree of each node in the graph."""
+
+        if self._as_networkx is not None:
+            return dict(self._as_networkx.out_degree())
+
+        return self._fill_node_zeros({row['id']: row['outDegree'] for row in self.graphframe.outDegrees.collect()})
+
+
+    def _fill_node_zeros(self, d):
+        """
+        This internal method fills the nodes that are not in the dictionary with a zero value. This make the output obtained from
+        graphframes consistent with the one from networkx.
+        """
+        for node in self.nodes:
+            if node['id'] not in d:
+                d[node['id']] = 0
+
+        return d
 
 
     def _calculate_closeness_centrality(self):
