@@ -203,16 +203,36 @@ class Graph:
 
     @property
     def nodes(self):
+        """
+        Returns an iterator over all the nodes in the graph.
+
+        Returns:
+            NodeIterator: An iterator that yields each node in the graph.
+        """
         return NodeIterator(self)
 
 
     @property
     def edges(self):
+        """
+        Returns an iterator over the edges in the graph.
+
+        Returns:
+            EdgeIterator: An iterator object that allows iterating over the edges in the graph.
+        """
         return EdgeIterator(self)
 
 
     @property
     def networkx(self):
+        """
+        Returns the graph representation as a NetworkX graph.
+
+        If the graph has not been converted to NetworkX format yet, it will be converted and cached for future use.
+
+        Returns:
+            networkx.Graph: The graph representation as a NetworkX graph.
+        """
         if self._as_networkx is None:
             self._as_networkx = self._to_networkx()
 
@@ -221,6 +241,14 @@ class Graph:
 
     @property
     def graphframe(self):
+        """
+        Returns the graph as a GraphFrame.
+
+        If the graph has not been converted to a GraphFrame yet, it will be converted and cached for future use.
+
+        Returns:
+            GraphFrame: The graph represented as a GraphFrame.
+        """
         if self._as_graphframe is None:
             self._as_graphframe = self._to_graphframe()
 
@@ -229,6 +257,14 @@ class Graph:
 
     @property
     def dgl(self):
+        """
+        Returns the graph as a DGL graph.
+
+        If the graph has not been converted to a DGL graph yet, it will be converted and cached for future use.
+
+        Returns:
+            dgl.DGLGraph: The graph represented as a DGL graph.
+        """
         if self._as_dgl is None:
             self._as_dgl = self._to_dgl()
 
@@ -293,21 +329,47 @@ class Graph:
 
     @property
     def number_of_nodes(self):
+        """
+        Returns the number of nodes in the graph.
+
+        Returns:
+            int: The number of nodes in the graph.
+        """
         return self._number_of_nodes
 
 
     @property
     def number_of_edges(self):
+        """
+        Returns the number of edges in the graph.
+
+        Returns:
+            int: The number of edges in the graph.
+        """
         return self._number_of_edges
 
 
     @property
     def is_directed(self):
+        """
+        Returns True if the graph is directed, False otherwise.
+
+        Note: Graphs created using graphframes are always directed. The way around it is to add the reverse edges to the graph.
+        This can be done by creating the Graph with pyspark DataFrame() and defining a key 'directed' set as False in the `dict`
+        argument. Otherwise, the graph will be considered directed even if these reversed edges have been created by other means
+        this class cannot be aware of.
+        """
         return self._is_directed
 
 
     @property
     def is_weighted(self):
+        """
+        Returns True if the graph is weighted, False otherwise.
+
+        A graph is considered weight if it has a column named 'weight' in the edges DataFrame or the column has a different name and that
+        name is passed in the `dict` argument as the 'weight' key.
+        """
         return self._is_weighted
 
 
