@@ -1,7 +1,69 @@
 import pandas as pd
 import networkx as nx
 
-from mercury.graph.core.spark_interface import SparkInterface, pyspark_installed, graphframes_installed
+class NodeIterator:
+    def __init__(self, graph):
+        self.graph = graph
+        self.ix = -1
+        if graph._as_networkx is not None:
+            self.key_list = list(graph._as_networkx.nodes.keys())
+        else:
+            self.key_list = [row['id'] for row in graph.graphframe.vertices.select('id').collect()]
+
+
+    def __iter__(self):
+        return self
+
+
+    def __next__(self):
+        self.ix += 1
+
+        if self.ix >= len(self.key_list):
+            raise StopIteration
+
+        ky = self.key_list[self.ix]
+
+        if self.graph._as_networkx is not None:
+            d = self.graph._as_networkx.nodes[ky]
+            d['id'] = ky
+
+            return d
+
+        g = self.graph.graphframe
+        return g.vertices.filter(g.vertices.id == ky).first().asDict()
+
+
+class EdgeIterator:
+    def __init__(self, graph):
+        self.graph = graph
+        self.ix = -1
+        if graph._as_networkx is not None:
+            self.key_list = list(graph._as_networkx.edges.keys())
+        else:
+            self.key_list = [(row['src'], row['dst']) for row in graph.graphframe.edges.collect()]
+
+
+    def __iter__(self):
+        return self
+
+
+    def __next__(self):
+        self.ix += 1
+
+        if self.ix >= len(self.key_list):
+            raise StopIteration
+
+        ky = self.key_list[self.ix]
+
+        if self.graph._as_networkx is not None:
+            d = self.graph._as_networkx.edges[ky]
+            d['src'] = ky[0]
+            d['dst'] = ky[1]
+
+            return d
+
+        g = self.graph.graphframe
+        return g.edges.filter((g.edges.src == ky[0]) & (g.edges.dst == ky[1])).first().asDict()
 
 
 class Graph:
