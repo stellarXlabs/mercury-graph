@@ -126,7 +126,7 @@ class Graph:
         if graphframes_installed and type(data) == spark_int.type_graphframe:
             self._from_graphframes(data)
 
-        self._from_binary(data)
+        return
 
 
     def __str__(self):
@@ -308,7 +308,9 @@ class Graph:
         else:
             g = nx.Graph()
 
-        self._is_weighted = weight in edges.columns
+        if weight in edges.columns:
+            self._is_weighted = True
+            edges = edges.rename(columns={weight: "weight"})
 
         for _, row in edges.iterrows():
             attr = row.drop([src, dst]).to_dict()
