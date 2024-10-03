@@ -21,13 +21,13 @@ References
     local optimization of modularity. Graph Partitioning (315--345), 2013.
 """
 
-from mercury.graph.graphml.base import BaseClustering
+from mercury.graph.graphml.base import BaseClass
 from mercury.graph.core import Graph
 from pyspark.sql import DataFrame, Window, functions as F
 from typing import Union
 
 
-class LouvainCommunities(BaseClustering):
+class LouvainCommunities(BaseClass):
     """
     Class that defines the functions that run the Louvain algorithm to find the 
     partition that maximizes the modularity of an undirected graph (as in [1]_).
@@ -80,6 +80,19 @@ class LouvainCommunities(BaseClustering):
         if resolution < 0:
             exceptionMsg = f"Resolution value is {resolution} and cannot be < 0."
             raise ValueError(exceptionMsg)
+
+
+    def __str__(self):
+        base_str = super().__str__()
+        
+        # Check if the object has been fitted (fitting creates the `labels_` attribute)
+        if hasattr(self, 'labels_'):
+            extra_str = [f"",
+                        f"Cluster assignments are available in attribute `labels_`",
+                        f"Modularity: {self.modularity_}"]
+            return "\n".join([base_str] + extra_str)
+        else:
+            return base_str
 
 
     def fit(self, g: Graph):

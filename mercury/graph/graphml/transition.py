@@ -6,9 +6,10 @@ import networkx as nx
 from numpy.linalg import matrix_power
 
 from mercury.graph.core import Graph
+from mercury.graph.graphml.base import BaseClass
 
 
-class Transition:
+class Transition(BaseClass):
     """
     Create an interface class to manage the adjacency matrix of a directed graph as a transition matrix. 
     This enables computing distributions of probabilities over the nodes after a given number of iterations.

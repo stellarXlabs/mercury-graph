@@ -1,6 +1,6 @@
 import inspect
 
-class BaseClustering:
+class BaseClass:
     """
     Base class for common functions and utilities
     """
@@ -13,19 +13,10 @@ class BaseClustering:
 
     def __str__(self):
         params = ", ".join([f"{k}={v}" for k, v in self.get_params().items()])
-        
-        # Check if the object has been fitted (fitting creates the `labels_` attribute)
-        if hasattr(self, 'labels_'):
-            base_str = [f"Object of class {self.__class__.__name__} (fitted).",
-                        f"",
-                        f"Cluster assignments are available in attribute `labels_`",
-                        f"Modularity: {self.modularity_}",
-                        f"",
-                        f"Initialization parameters: {params}"]
-        else:
-            base_str = [f"Object of class {self.__class__.__name__} (not fitted)",
-                        f"",
-                        f"Initialization parameters: {params}"]
+
+        base_str = [f"Object of class {self.__class__.__name__}.",
+                    f"",
+                    f"Initialization parameters: {params}"]
 
         return "\n".join(base_str)
 

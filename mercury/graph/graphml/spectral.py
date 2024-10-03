@@ -1,5 +1,5 @@
 from mercury.graph.core import Graph
-from mercury.graph.graphml.base import BaseClustering
+from mercury.graph.graphml.base import BaseClass
 from pandas import DataFrame
 from networkx import normalized_laplacian_matrix
 from networkx.algorithms.community import modularity as nx_modularity
@@ -9,7 +9,7 @@ from numpy import asarray
 import numpy as np
 
 
-class SpectralClustering(BaseClustering):
+class SpectralClustering(BaseClass):
     """
     Implementation of the spectral clustering algorithm which detect communities inside a graph.
 
@@ -29,6 +29,19 @@ class SpectralClustering(BaseClustering):
 
         if self.mode not in ('networkx', 'spark'):
             raise ValueError("Error: Mode must be either 'networkx' or 'spark'")
+
+
+    def __str__(self):
+        base_str = super().__str__()
+        
+        # Check if the object has been fitted (fitting creates the `labels_` attribute)
+        if hasattr(self, 'labels_'):
+            extra_str = [f"",
+                        f"Cluster assignments are available in attribute `labels_`",
+                        f"Modularity: {self.modularity_}"]
+            return "\n".join([base_str] + extra_str)
+        else:
+            return base_str
 
 
     def fit(self, graph: Graph):
