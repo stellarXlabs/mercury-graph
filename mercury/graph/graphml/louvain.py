@@ -22,6 +22,7 @@ References
 """
 
 from mercury.graph.graphml.base import BaseClustering
+from mercury.graph.core import Graph
 from pyspark.sql import DataFrame, Window, functions as F
 from typing import Union
 
@@ -81,18 +82,16 @@ class LouvainCommunities(BaseClustering):
             raise ValueError(exceptionMsg)
 
 
-    def fit(self, edges):
+    def fit(self, g: Graph):
         """
         Args:
-            edges (pyspark.sql.dataframe.DataFrame):
-                A pyspark dataframe representing the edges of an undirected graph.
-                It must have `src` and `dst` as its columns. The user may also
-                specify the weight of each edge via the additional `weight` column
-                (optional).
+            graph (Graph): A mercury graph structure.
         
         Returns:
-            self (object): Fitted self (or raises an error)
+            self (object): Fitted self (or raises an error).
         """
+        edges = g.graphframe.edges
+        
         # Verify edges input
         self._verify_data(df=edges,
                           expected_cols_grouping=['src', 'dst'],
@@ -155,10 +154,8 @@ class LouvainCommunities(BaseClustering):
                 canIter = (p2.where('cx != cj').count() > 0) and (_iter < self.max_iter)
                 if canIter:
                     del p1
-                    # sparkSession.sparkContext._jvm.System.gc()
                     p1 = p2.selectExpr('id', 'cj as c').checkpoint()
                 del p2
-                # sparkSession.sparkContext._jvm.System.gc()
                 _iter += 1
 
             # Calculate new modularity and update pass counter

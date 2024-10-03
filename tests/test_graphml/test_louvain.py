@@ -1,7 +1,9 @@
 # Import dependencies
 import pytest
+import pandas as pd
 from pyspark.sql.functions import collect_set
 from mercury.graph.graphml import LouvainCommunities
+from mercury.graph.core import Graph
 
 
 class TestLouvain(object):
@@ -16,13 +18,14 @@ class TestLouvain(object):
         
         assert louvain_clustering.max_iter == 10  # Default value
 
+
     def test_fit(self, spark):
         """
         Tests method LouvainCommunities.fit
         """
 
-        # Declare edges
-        e = spark.createDataFrame(
+        # Create graph from edges and nodes in pyspark DataFrames
+        df_edges = spark.createDataFrame(
             data=[
                 (1, 0, 1),
                 (2, 1, 1),
@@ -35,15 +38,25 @@ class TestLouvain(object):
             ],
             schema=['src', 'dst', 'weight']
         )
+        df_nodes = spark.createDataFrame(pd.DataFrame({
+            'node_id': ['0', '1', '2', '3', '4', '5', '6', '7', '8'],
+        }))
+
+        g = Graph(data=df_edges,
+                  nodes=df_nodes,
+                  keys={"src": "src",
+                        "dst": "dst",
+                        "weight": "value",
+                        "id": "node_id"})
         
         louvain_clustering = LouvainCommunities()
 
         # Get louvain partitions
-        louvain_clustering.fit(edges=e)
+        louvain_clustering.fit(g)
         communities = louvain_clustering.labels_
 
         ## Check communities' type (pyspark df)
-        assert type(communities) == type(e)
+        assert type(communities) == type(df_edges)
 
         ## Check if `communities` returned all nodes
         assert communities.count() == 9

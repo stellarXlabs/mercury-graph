@@ -59,7 +59,7 @@ class SpectralClustering(BaseClustering):
         Returns:
             self (object): Fitted self (or raises an error)
         """
-        gnx = graph.networkx().to_undirected()
+        gnx = graph.networkx.to_undirected()
 
         L = normalized_laplacian_matrix(gnx)
 
@@ -95,7 +95,7 @@ class SpectralClustering(BaseClustering):
         pic = PowerIterationClustering(k=self.n_clusters, weightCol="weight")
         pic.setMaxIter(self.max_iterations)
 
-        graph_frames_graph = graph.graphframe()
+        graph_frames_graph = graph.graphframe
 
         # Node ids can be strings, with this we ensure IDs are always converted to
         # integers (needed by PowerIterationClustering)

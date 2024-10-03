@@ -5,6 +5,8 @@ import networkx as nx
 
 from numpy.linalg import matrix_power
 
+from mercury.graph.core import Graph
+
 
 class Transition:
     """
@@ -12,41 +14,16 @@ class Transition:
     This enables computing distributions of probabilities over the nodes after a given number of iterations.
 
     Args
-        G (Graph): A `mercury.graph` graph. This graph must be created using G.auto_init()
+        G_markov_ (Graph): A `mercury.graph` Graph resulting from calling method fit() on a Graph, 
+            where its adjacency matrix has been converted into a transition matrix.
 
     """
 
     def __init__(self):
-        self.G = nx.DiGraph()
+        self.G_markov_ = None
 
 
-    def set_row(self, row_id, row_content):
-        """
-        Defines an entire row of the transition matrix in just one call. All previous values in the row will be cleared even if not
-        defined in the call.
-
-        Args:
-            row_id (str): The node id of the row that will be cleared and defined. It will automatically add new nodes if necessary.
-            row_content (dict): A dictionary of destination node ids and weights. The weights must be numeric and positive!
-
-        Returns:
-            (None): None (or raises an error)
-
-        """
-        old_keys = set(self.G.nodes)
-        new_keys = [nk for nk in [row_id] + list(row_content.keys()) if nk not in old_keys]
-
-        for key in new_keys:
-            self.G.add_node(key)
-
-        for dest in list(self.G[row_id].keys()):
-            self.G.remove_edge(row_id, dest)
-
-        for dest in row_content.keys():
-            self.G.add_edge(row_id, dest, weight=float(row_content[dest]))
-
-
-    def fit(self):
+    def fit(self, G: Graph):
         """
         Converts the adjacency matrix into a transition matrix. Transition matrices are used to compute the distribution of probability
         of being in each of the nodes (or states) of a directed graph (or Markov process). The distribution for state s is:
@@ -63,15 +40,18 @@ class Transition:
             If created using NetworkX directly, the name of the weight must be 'weight' and must be positive. The recommended way
             to create the graph is using .set_row() which will always name the weight as 'weight' but does not check the value.
 
+        Args
+            G (Graph): A `mercury.graph` Graph.
+
         Returns:
-            self (object): Fitted self (or raises an error)
+            self (object): Fitted self (or raises an error).
 
         What .fit() does is scaling the non-zero rows to make them sum 1 as they are probability distributions and make the zero rows
         recurrent states. A recurrent state is a final state, a state whose next state is itself.
 
         """
-        names = list(self.G.nodes)
-        adj_m = nx.adjacency_matrix(self.G, weight="weight")
+        names = list(G.networkx.nodes)
+        adj_m = nx.adjacency_matrix(G.networkx, weight="weight", dtype=float)
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -88,7 +68,9 @@ class Transition:
                 adj_m[[i], :] = row
 
         df = pd.DataFrame(adj_m.todense(), index=names, columns=names)
-        self.G = nx.from_pandas_adjacency(df, create_using=nx.DiGraph)
+        self.G_markov_ = Graph(nx.from_pandas_adjacency(df, create_using=nx.DiGraph))
+
+        return self
 
 
     def to_pandas(self, num_iterations=1):
@@ -107,11 +89,14 @@ class Transition:
 
         Note:
             This method does not automatically call .fit(). This allows inspecting the adjacency matrix as a pandas dataframe.
-            The result of computing num_iterations will not make sense if .fit() has not been called before .topandas().
+            The result of computing num_iterations will not make sense if .fit() has not been called before .to_pandas().
 
         """
-        names = list(self.G.nodes)
-        adj_m = nx.adjacency_matrix(self.G, weight="weight").todense()
+        if self.G_markov_ is None:
+            raise ValueError("Error: fit() must be called first.")
+        
+        names = list(self.G_markov_.networkx.nodes)
+        adj_m = nx.adjacency_matrix(self.G_markov_.networkx, weight="weight").todense()
 
         if num_iterations != 1:
             adj_m = matrix_power(adj_m, num_iterations)

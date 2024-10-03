@@ -5,11 +5,12 @@ import pytest
 
 from mercury.graph.utils import is_spark_available
 
+
 if is_spark_available():
-    from pyspark.sql import SparkSession
+    from mercury.graph.core.spark_interface import SparkInterface
     
     import pandas as pd
-    pd.DataFrame.iteritems = pd.DataFrame.items
+    pd.DataFrame.iteritems = pd.DataFrame.items  # In case pandas>=2.0 and Spark<3.4
 
     path_tmp_data = "./tmp_data"
     path_tmp_binf = "./tmp_binf"
@@ -20,14 +21,14 @@ if is_spark_available():
             :param request: pytest.FixtureRequest object
             :return SparkSession for testing
         """
-        ss = (
-            SparkSession.builder.appName("mercury.graph")
-            .config("spark.jars.packages", "graphframes:graphframes:0.8.2-spark3.0-s_2.12")
-            .getOrCreate()
-        )
-        ss.sparkContext.setCheckpointDir("./tmp_checkpoint")
+
         logger = logging.getLogger("py4j")
         logger.setLevel(logging.FATAL)
-        yield ss
-        request.addfinalizer(lambda: ss.stop())
+        
+        spark = SparkInterface().spark
+        spark.sparkContext.setCheckpointDir("./tmp_checkpoint")
+        yield spark
+        
+        request.addfinalizer(lambda: spark.stop())
+        
         shutil.rmtree("./tmp_checkpoint")
