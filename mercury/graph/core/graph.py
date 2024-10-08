@@ -683,8 +683,15 @@ class Graph:
 
 
     def _calculate_pagerank(self):
-        # TODO: This
-        pass
+        """
+        This internal method handles the logic of a property. It returns the PageRank of each node in the graph as a Python dictionary.
+        """
+        if self._as_networkx is not None:
+            return nx.pagerank(self._as_networkx)
+
+        pr = self.graphframe.pageRank(resetProbability = 0.15, tol = 0.01).vertices
+
+        return {row['id']: row['pagerank'] for row in pr.collect()}
 
 
     def _calculate_connected_components(self):
