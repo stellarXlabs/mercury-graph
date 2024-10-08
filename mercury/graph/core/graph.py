@@ -343,13 +343,6 @@ class Graph:
 
 
     @property
-    def connected_components_counts(self):
-        if self._connected_components_c is None:
-            self._connected_components_c = self._calculate_connected_components_counts()
-        return self._connected_components_c
-
-
-    @property
     def nodes_summary(self):
         if self._nodes_summary is None:
             self._nodes_summary = self._calculate_nodes_summary()
