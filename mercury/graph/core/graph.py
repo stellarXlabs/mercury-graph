@@ -660,8 +660,21 @@ class Graph:
 
 
     def _calculate_closeness_centrality(self):
-        # TODO: This
-        pass
+        """
+        This internal method handles the logic of a property. It returns the closeness centrality of each node in the graph as
+        a Python dictionary.
+        """
+        if self._as_networkx is not None:
+            return nx.closeness_centrality(self._as_networkx)
+
+        nodes = [row['id'] for row in self.graphframe.vertices.select('id').collect()]
+        paths = self.graphframe.shortestPaths(landmarks = nodes)
+        expr  = SparkInterface().pyspark.sql.functions.expr
+        sums  = paths.withColumn('sums', expr('aggregate(map_values(distances), 0, (acc, x) -> acc + x)'))
+
+        cc = sums.withColumn('cc', (self.number_of_nodes - 1)/sums['sums']).select('id', 'cc')
+
+        return {row['id']: row['cc'] for row in cc.collect()}
 
 
     def _calculate_betweenness_centrality(self):
