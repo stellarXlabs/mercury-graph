@@ -125,6 +125,17 @@ class Graph:
     - Properties with metrics and summary information that are calculated on demand and technology independent.
     - It is inherited by other graph classes in mercury-graph providing ML algorithms such as graph embedding, visualization, etc.
 
+    Using this class from the other classes in mercury-graph:
+
+    The other classes in mercury-graph define models or functionalities that are based on graphs. They use a Scikit-learn-like API to
+    interact with the graph object. This means that the graph object is passed to the class constructor and the class follow the
+    Scikit-learn conventions. It is recommended to follow the same conventions when creating your own classes to work with mercury-graph.
+
+    The conventions can be found here:
+
+    - Scikit API: https://scikit-learn.org/stable/developers/develop.html#apis-of-scikit-learn-objects
+    - On scikit conventions: https://scikit-learn.org/stable/glossary.html
+
     Args:
         data: The data to create the graph from. It can be a pandas DataFrame, a networkx Graph, a pyspark DataFrame, or a Graphframe. In
             case it already contains a graph (networkx or graphframes), the keys and nodes arguments are ignored.
