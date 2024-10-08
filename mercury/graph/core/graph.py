@@ -275,6 +275,9 @@ class Graph:
 
     @property
     def degree(self):
+        """
+        Returns the degree of each node in the graph as a Python dictionary.
+        """
         if self._degree is None:
             self._degree = self._calculate_degree()
         return self._degree
@@ -282,6 +285,9 @@ class Graph:
 
     @property
     def in_degree(self):
+        """
+        Returns the in-degree of each node in the graph as a Python dictionary.
+        """
         if self._in_degree is None:
             self._in_degree = self._calculate_in_degree()
         return self._in_degree
@@ -289,6 +295,9 @@ class Graph:
 
     @property
     def out_degree(self):
+        """
+        Returns the out-degree of each node in the graph as a Python dictionary.
+        """
         if self._out_degree is None:
             self._out_degree = self._calculate_out_degree()
         return self._out_degree
