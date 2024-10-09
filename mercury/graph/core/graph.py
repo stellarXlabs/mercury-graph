@@ -506,8 +506,6 @@ class Graph:
         else:
             g = nx.Graph()
 
-        self._is_weighted = weight in edges.columns
-
         for _, row in edges.iterrows():
             attr = row.drop([src, dst]).to_dict()
             g.add_edge(row[src], row[dst], **attr)
@@ -540,7 +538,6 @@ class Graph:
             edges = edges.withColumnRenamed(src, 'src').withColumnRenamed(dst, 'dst')
 
             if weight in edges.columns:
-                self._is_weighted = True
                 edges = edges.withColumnRenamed(weight, 'weight')
 
             if nodes is not None:
@@ -573,6 +570,7 @@ class Graph:
         self._number_of_nodes = len(graph.nodes)
         self._number_of_edges = len(graph.edges)
         self._is_directed = nx.is_directed(graph)
+        self._is_weighted = 'weight' in self.edges_colnames
 
 
     def _from_graphframes(self, graph, directed = True):
@@ -584,6 +582,7 @@ class Graph:
         self._number_of_nodes = graph.vertices.count()
         self._number_of_edges = graph.edges.count()
         self._is_directed = directed
+        self._is_weighted = 'weight' in self.edges_colnames
 
 
     def _to_networkx(self):
