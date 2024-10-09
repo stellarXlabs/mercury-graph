@@ -165,9 +165,8 @@ class Graph:
         self._betweenness_centrality = None
         self._pagerank = None
         self._connected_components = None
-        self._connected_components_c = None
-        self._nodes_summary = None
-        self._edges_summary = None
+        self._nodes_colnames = None
+        self._edges_colnames = None
 
         self._number_of_nodes = 0
         self._number_of_edges = 0
@@ -316,6 +315,9 @@ class Graph:
 
     @property
     def closeness_centrality(self):
+        """
+        Returns the closeness centrality of each node in the graph as a Python dictionary.
+        """
         if self._closeness_centrality is None:
             self._closeness_centrality = self._calculate_closeness_centrality()
         return self._closeness_centrality
@@ -323,6 +325,9 @@ class Graph:
 
     @property
     def betweenness_centrality(self):
+        """
+        Returns the betweenness centrality of each node in the graph as a Python dictionary.
+        """
         if self._betweenness_centrality is None:
             self._betweenness_centrality = self._calculate_betweenness_centrality()
         return self._betweenness_centrality
@@ -330,6 +335,9 @@ class Graph:
 
     @property
     def pagerank(self):
+        """
+        Returns the PageRank of each node in the graph as a Python dictionary.
+        """
         if self._pagerank is None:
             self._pagerank = self._calculate_pagerank()
         return self._pagerank
@@ -337,23 +345,32 @@ class Graph:
 
     @property
     def connected_components(self):
+        """
+        Returns the connected components of each node in the graph as a Python dictionary.
+        """
         if self._connected_components is None:
             self._connected_components = self._calculate_connected_components()
         return self._connected_components
 
 
     @property
-    def nodes_summary(self):
-        if self._nodes_summary is None:
-            self._nodes_summary = self._calculate_nodes_summary()
-        return self._nodes_summary
+    def nodes_colnames(self):
+        """
+        Returns the column names of the nodes DataFrame.
+        """
+        if self._nodes_colnames is None:
+            self._nodes_colnames = self._calculate_nodes_colnames()
+        return self._nodes_colnames
 
 
     @property
-    def edges_summary(self):
-        if self._edges_summary is None:
-            self._edges_summary = self._calculate_edges_summary()
-        return self._edges_summary
+    def edges_colnames(self):
+        """
+        Returns the column names of the edges DataFrame.
+        """
+        if self._edges_colnames is None:
+            self._edges_colnames = self._calculate_edges_colnames()
+        return self._edges_colnames
 
 
     @property
@@ -678,8 +695,12 @@ class Graph:
 
 
     def _calculate_betweenness_centrality(self):
-        # TODO: This
-        pass
+        """
+        This internal method handles the logic of a property. It returns the betweenness centrality of each node in the graph as a Python
+        dictionary. NOTE: This method converts the graph to a networkx graph to calculate the betweenness centrality since the algorithm
+        is too computationally expensive to use on large graphs.
+        """
+        return nx.betweenness_centrality(self.networkx)
 
 
     def _calculate_pagerank(self):
@@ -695,20 +716,54 @@ class Graph:
 
 
     def _calculate_connected_components(self):
-        # TODO: This
-        pass
+        """
+        This internal method handles the logic of a property. It returns the connected components of each node in the graph as a Python
+        dictionary.
+        """
+        if self._as_networkx is not None:
+            if self._is_directed:
+                G = self._as_networkx.to_undirected()
+            else:
+                G = self._as_networkx
+
+            graphs = (G.subgraph(c) for c in nx.connected_components(G))
+            cc = dict()
+            for i, graph in enumerate(graphs):
+                n = graph.number_of_nodes()
+                for nid in graph.nodes:
+                    cc[nid] = {'cc_id' : i, 'cc_size' : n}
+
+            return cc
+
+        graphs = self.graphframe.connectedComponents(algorithm = 'graphx')
+        cc_size = graphs.select('id', 'component').groupBy('component').count()
+        cc_all = graphs.select('id', 'component').join(cc_size, 'component', how = 'left_outer')
+
+        cc = dict()
+        for row in cc_all.collect():
+            cc[row['id']] = {'cc_id' : row['component'], 'cc_size' : row['count']}
+
+        return cc
 
 
-    def _calculate_connected_components_counts(self):
-        # TODO: This
-        pass
+    def _calculate_nodes_colnames(self):
+        """ This internal method returns the column names of the nodes DataFrame. """
+
+        if self._as_networkx is not None:
+            l = ['id']
+            l.extend(list(self._as_networkx.nodes[list(self._as_networkx.nodes.keys())[0]].keys()))
+
+            return l
+
+        return self.graphframe.vertices.columns
 
 
-    def _calculate_nodes_summary(self):
-        # TODO: This
-        pass
+    def _calculate_edges_colnames(self):
+        """ This internal method returns the column names of the edges DataFrame. """
 
+        if self._as_networkx is not None:
+            l = ['src', 'dst']
+            l.extend(list(self._as_networkx.edges[list(self._as_networkx.edges.keys())[0]].keys()))
+            return l
 
-    def _calculate_edges_summary(self):
-        # TODO: This
-        pass
+        return self.graphframe.edges.columns
