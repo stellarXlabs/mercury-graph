@@ -62,7 +62,7 @@ class TestSpectral(object):
         assert spectral_clustering.labels_.cluster[spectral_clustering.labels_.node_id == 'a'].values[0] == spectral_clustering.labels_.cluster[spectral_clustering.labels_.node_id == 'e'].values[0]
 
 
-    def test_fit_spark(self, spark):
+    def test_fit_spark(self):
         """
         Tests method SpectralClustering.fit
         """

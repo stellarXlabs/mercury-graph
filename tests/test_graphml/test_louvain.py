@@ -1,9 +1,11 @@
 # Import dependencies
 import pytest
 import pandas as pd
+
 from pyspark.sql.functions import collect_set
+
+from mercury.graph.core import Graph, SparkInterface
 from mercury.graph.graphml import LouvainCommunities
-from mercury.graph.core import Graph
 
 
 class TestLouvain(object):
@@ -19,13 +21,13 @@ class TestLouvain(object):
         assert louvain_clustering.max_iter == 10  # Default value
 
 
-    def test_fit(self, spark):
+    def test_fit(self):
         """
         Tests method LouvainCommunities.fit
         """
 
         # Create graph from edges and nodes in pyspark DataFrames
-        df_edges = spark.createDataFrame(
+        df_edges = SparkInterface().spark.createDataFrame(
             data=[
                 (1, 0, 1),
                 (2, 1, 1),
@@ -38,7 +40,7 @@ class TestLouvain(object):
             ],
             schema=['src', 'dst', 'weight']
         )
-        df_nodes = spark.createDataFrame(pd.DataFrame({
+        df_nodes = SparkInterface().spark.createDataFrame(pd.DataFrame({
             'node_id': ['0', '1', '2', '3', '4', '5', '6', '7', '8'],
         }))
 
@@ -84,7 +86,7 @@ class TestLouvain(object):
         assert (c1 in partition) and (c2 in partition) and (c3 in partition)
 
 
-    def test_sortPasses_lt10(self, spark):
+    def test_sortPasses_lt10(self):
         """
         Test sortPasses with maxPass < 10
         """
@@ -94,7 +96,7 @@ class TestLouvain(object):
         cols_expected = ['id'] + [f'pass{i}' for i in range(_passes + 1)]
 
         # Declare df with shuffled columns
-        t = spark.createDataFrame(
+        t = SparkInterface().spark.createDataFrame(
             data=[tuple([1] * (_passes + 2))],
             schema=sorted(cols_expected)
         )
@@ -105,7 +107,7 @@ class TestLouvain(object):
         assert louvain_clustering._sort_passes(t) == cols_expected
 
 
-    def test_sortPasses_gt10(self, spark):
+    def test_sortPasses_gt10(self):
         """
         Test sortPasses with maxPass > 10
         """
@@ -115,7 +117,7 @@ class TestLouvain(object):
         cols_expected = ['id'] + [f'pass{i}' for i in range(_passes + 1)]
 
         # Declare df with shuffled columns
-        t = spark.createDataFrame(
+        t = SparkInterface().spark.createDataFrame(
             data=[tuple([1] * (_passes + 2))],
             schema=sorted(cols_expected)
         )
@@ -126,12 +128,12 @@ class TestLouvain(object):
         assert louvain_clustering._sort_passes(t) == cols_expected
 
 
-    def test_missing_src(self, spark):
+    def test_missing_src(self):
         """
         Test error raised by omitting src
         """
 
-        t = spark.createDataFrame(data=[(1,)], schema=['dst'])
+        t = SparkInterface().spark.createDataFrame(data=[(1,)], schema=['dst'])
 
         expected_msg = "Input data is missing expected column 'src'."
 
@@ -143,12 +145,12 @@ class TestLouvain(object):
                                             expected_cols_others=[])
 
 
-    def test_missing_weight(self, spark):
+    def test_missing_weight(self):
         """
         Test if function assigns weight column correctly
         """
 
-        t = spark.createDataFrame(data=[(1, 0)], schema=['src', 'dst'])
+        t = SparkInterface().spark.createDataFrame(data=[(1, 0)], schema=['src', 'dst'])
 
         expected_msg = "Input data is missing expected column 'weight'."
 
@@ -160,14 +162,14 @@ class TestLouvain(object):
                                                    expected_cols_others=['weight'])
 
 
-    def test_lastPass_lt10(self, spark):
+    def test_lastPass_lt10(self):
         """
         Test if lastPass returns last pass with <10 passes
         """
 
         _passes = 5
 
-        t = spark.createDataFrame(
+        t = SparkInterface().spark.createDataFrame(
             data=[tuple([1] * (_passes + 2))],
             schema=['id'] + [f'pass{str(i)}' for i in range(_passes + 1)]
         )
@@ -177,14 +179,14 @@ class TestLouvain(object):
         assert louvain_clustering._last_pass(t) == f'pass{_passes}'
 
 
-    def test_lastPass_gt10(self, spark):
+    def test_lastPass_gt10(self):
         """
         Test if lastPass returns last pass with >10 passes
         """
 
         _passes = 30
 
-        t = spark.createDataFrame(
+        t = SparkInterface().spark.createDataFrame(
             data=[tuple([1] * (_passes + 2))],
             schema=['id'] + [f'pass{str(i)}' for i in range(_passes + 1)]
         )
