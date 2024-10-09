@@ -14,3 +14,7 @@ classifiers		= ['Programming Language :: Python :: 3',
 keywords		= ['graph', 'embedding', 'graph embedding', 'graph exploration', 'graph metrics']
 authors			= [{name = 'Mercury Team', email = 'mercury.group@bbva.com'}]
 readme			= 'README.md'
+
+[tool.setuptools.packages.find]
+include = ['mercury*']
+exclude = ['docker', 'unit_tests']
