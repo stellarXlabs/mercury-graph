@@ -6,7 +6,7 @@ build-backend	= 'setuptools.build_meta'
 name			= 'mercury-graph'
 version			= '3.2.1'
 description		= '.'
-license			= {file = "LICENSE.txt"}
+license			= {file = "LICENSE"}
 requires-python = '>=3.8'
 classifiers		= ['Programming Language :: Python :: 3',
 					'License :: OSI Approved :: Apache Software License',
@@ -15,12 +15,9 @@ keywords		= ['graph', 'embedding', 'graph embedding', 'graph exploration', 'grap
 authors			= [{name = 'Mercury Team', email = 'mercury.group@bbva.com'}]
 readme			= 'README.md'
 
-[tool.setuptools]
-package-dir		= {'' = 'mercury'}
-
 [tool.setuptools.packages.find]
-where			= ['mercury']
+include = ['mercury*']
+exclude = ['docker', 'unit_tests']
 
 [tool.pytest.ini_options]
-norecursedirs 	= [".venv", ".tox"]
-testpaths 		= ["tests"]
+testpaths 		= ["unit_tests"]
