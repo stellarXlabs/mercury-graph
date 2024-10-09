@@ -107,10 +107,10 @@ class SpectralClustering(BaseClass):
         from pyspark.sql import functions as F
         from pyspark.ml.clustering import PowerIterationClustering
 
+        graph_frames_graph = graph.graphframe
+
         pic = PowerIterationClustering(k=self.n_clusters, weightCol="weight")
         pic.setMaxIter(self.max_iterations)
-
-        graph_frames_graph = graph.graphframe
 
         # Node ids can be strings, with this we ensure IDs are always converted to
         # integers (needed by PowerIterationClustering)
