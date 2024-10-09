@@ -430,9 +430,8 @@ class Graph:
         if self._as_networkx is not None:
             nodes_data = self._as_networkx.nodes(data = True)
             nodes_df   = pd.DataFrame([(node, attr) for node, attr in nodes_data], columns = ['id', 'attributes'])
-            attrs_df   = pd.json_normalize(nodes_df['attributes'])
 
-            return pd.concat([nodes_df.drop('attributes', axis = 1), attrs_df], axis = 1)
+            return pd.json_normalize(nodes_df['attributes'])
 
         return self.graphframe.vertices.toPandas()
 
@@ -448,9 +447,8 @@ class Graph:
         if self._as_networkx is not None:
             edges_data = self._as_networkx.edges(data = True)
             edges_df   = pd.DataFrame([(src, dst, attr) for src, dst, attr in edges_data], columns = ['src', 'dst', 'attributes'])
-            attrs_df   = pd.json_normalize(edges_df['attributes'])
 
-            return pd.concat([edges_df.drop('attributes', axis = 1), attrs_df], axis = 1)
+            return pd.json_normalize(edges_df['attributes'])
 
         return self.graphframe.edges.toPandas()
 
