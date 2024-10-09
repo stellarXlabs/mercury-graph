@@ -74,6 +74,8 @@ class SparkInterface:
                 SparkInterface._spark_session = session
             else:
                 SparkInterface._spark_session = self._create_spark_session(config)
+                # Set checkpoint directory
+                SparkInterface._spark_session.sparkContext.setCheckpointDir(".checkpoint")
 
         if SparkInterface._graphframes is None and graphframes_installed:
             SparkInterface._graphframes = gf
