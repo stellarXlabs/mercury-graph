@@ -4,22 +4,33 @@ from mercury.graph.graphml import Transition
 from mercury.graph.core import Graph
 
 
-df_edges = pd.DataFrame({
-    'src': ['Madrid', 'Madrid', 'Bilbao', 'Bilbao', 'Barcelona', 'Barcelona'],
-    'dst': ['Bilbao', 'Barcelona', 'Santander', 'Algorta', 'Reus', 'Andorra'],
-    'value': [50, 50, 25, 75, 25, 75]
-})
+df_edges = pd.DataFrame(
+    {
+        "src": ["Madrid", "Madrid", "Bilbao", "Bilbao", "Barcelona", "Barcelona"],
+        "dst": ["Bilbao", "Barcelona", "Santander", "Algorta", "Reus", "Andorra"],
+        "value": [50, 50, 25, 75, 25, 75],
+    }
+)
 
-df_nodes = pd.DataFrame({
-    'node_id': ['Madrid', 'Barcelona', 'Bilbao', 'Santander', 'Andorra', 'Reus', 'Algorta'],
-})
+df_nodes = pd.DataFrame(
+    {
+        "node_id": [
+            "Madrid",
+            "Barcelona",
+            "Bilbao",
+            "Santander",
+            "Andorra",
+            "Reus",
+            "Algorta",
+        ],
+    }
+)
 
-g = Graph(data=df_edges,
-          nodes=df_nodes,
-          keys={"src": "src",
-                "dst": "dst",
-                "weight": "value",
-                "id": "node_id"})
+g = Graph(
+    data=df_edges,
+    nodes=df_nodes,
+    keys={"src": "src", "dst": "dst", "weight": "value", "id": "node_id"},
+)
 
 
 class TestTransition(object):
@@ -38,7 +49,11 @@ class TestTransition(object):
         ib = list(g.networkx.nodes).index("Bilbao")
         ia = list(g.networkx.nodes).index("Andorra")
 
-        assert tm[[im], :].sum() == 100 and tm[[ib], :].sum() == 100 and tm[[ia], :].sum() == 0
+        assert (
+            tm[[im], :].sum() == 100
+            and tm[[ib], :].sum() == 100
+            and tm[[ia], :].sum() == 0
+        )
 
         # Adjacency matrix of graph after Transition.fit()
 
@@ -47,12 +62,11 @@ class TestTransition(object):
         tm = networkx.adjacency_matrix(T.G_markov_.networkx, weight="weight")
 
         for i in range(tm.shape[0]):
-            assert tm[[i],:].sum() == 1
+            assert tm[[i], :].sum() == 1
 
         tm = T.to_pandas()
 
         assert tm.loc["Madrid", "Bilbao"] == 0.5 and tm.loc["Algorta", "Algorta"] == 1
-
 
     def test_to_pandas(self):
         """

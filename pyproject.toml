@@ -16,8 +16,8 @@ authors			= [{name = 'Mercury Team', email = 'mercury.group@bbva.com'}]
 readme			= 'README.md'
 
 [tool.setuptools.packages.find]
-include = ['mercury*']
-exclude = ['docker', 'unit_tests']
+include 		= ['mercury*']
+exclude 		= ['docker', 'unit_tests']
 
 [tool.pytest.ini_options]
 testpaths 		= ["unit_tests"]

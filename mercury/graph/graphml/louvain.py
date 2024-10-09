@@ -29,7 +29,7 @@ from typing import Union
 
 class LouvainCommunities(BaseClass):
     """
-    Class that defines the functions that run the Louvain algorithm to find the 
+    Class that defines the functions that run the Louvain algorithm to find the
     partition that maximizes the modularity of an undirected graph (as in [1]_).
 
     Args:
@@ -75,64 +75,57 @@ class LouvainCommunities(BaseClass):
         self.resolution = resolution
         self.all_partitions = all_partitions
         self.verbose = verbose
-        
+
         # Check resolution
         if resolution < 0:
             exceptionMsg = f"Resolution value is {resolution} and cannot be < 0."
             raise ValueError(exceptionMsg)
 
-
     def __str__(self):
         base_str = super().__str__()
-        
+
         # Check if the object has been fitted (fitting creates the `labels_` attribute)
-        if hasattr(self, 'labels_'):
-            extra_str = [f"",
-                        f"Cluster assignments are available in attribute `labels_`",
-                        f"Modularity: {self.modularity_}"]
+        if hasattr(self, "labels_"):
+            extra_str = [
+                f"",
+                f"Cluster assignments are available in attribute `labels_`",
+                f"Modularity: {self.modularity_}",
+            ]
             return "\n".join([base_str] + extra_str)
         else:
             return base_str
-
 
     def fit(self, g: Graph):
         """
         Args:
             graph (Graph): A mercury graph structure.
-        
+
         Returns:
             self (object): Fitted self (or raises an error).
         """
         edges = g.graphframe.edges
-        
+
         # Verify edges input
-        self._verify_data(df=edges,
-                          expected_cols_grouping=['src', 'dst'],
-                          expected_cols_others=['weight'])
+        self._verify_data(
+            df=edges,
+            expected_cols_grouping=["src", "dst"],
+            expected_cols_others=["weight"],
+        )
 
         # Init dataframe to be returned
         ret = (
-            edges.selectExpr('src as id')
-            .unionByName(edges.selectExpr('dst as id'))
+            edges.selectExpr("src as id")
+            .unionByName(edges.selectExpr("dst as id"))
             .distinct()
-            .withColumn(
-                'pass0',
-                F.row_number().over(Window.orderBy('id'))
-            )
+            .withColumn("pass0", F.row_number().over(Window.orderBy("id")))
         )
 
         # Convert edges to anonymized src's and dst's
         edges = (
-            edges.selectExpr('src as src0', 'dst as dst0', 'weight')
-            .join(
-                other=ret.selectExpr('id as src0', 'pass0 as src'),
-                on='src0'
-            )
-            .join(
-                other=ret.selectExpr('id as dst0', 'pass0 as dst'),
-                on='dst0'
-            )
-            .select('src', 'dst', 'weight')
+            edges.selectExpr("src as src0", "dst as dst0", "weight")
+            .join(other=ret.selectExpr("id as src0", "pass0 as src"), on="src0")
+            .join(other=ret.selectExpr("id as dst0", "pass0 as dst"), on="dst0")
+            .select("src", "dst", "weight")
             .checkpoint()
         )
 
@@ -146,12 +139,10 @@ class LouvainCommunities(BaseClass):
 
             # Declare naive partition
             p1 = (
-                edges.selectExpr('src as id')
-                .unionByName(
-                    edges.selectExpr('dst as id')
-                )
+                edges.selectExpr("src as id")
+                .unionByName(edges.selectExpr("dst as id"))
                 .distinct()
-                .withColumn('c', F.col('id'))
+                .withColumn("c", F.col("id"))
             )  # From ret???
 
             # Begin iterations within pass
@@ -160,47 +151,43 @@ class LouvainCommunities(BaseClass):
 
                 # Print progress
                 if self.verbose:
-                    print(f'Starting Pass {_pass} Iteration {_iter}.')
+                    print(f"Starting Pass {_pass} Iteration {_iter}.")
 
                 # Create new partition and check if movements were made
                 p2 = self._reassign_all(edges, p1).checkpoint()
-                canIter = (p2.where('cx != cj').count() > 0) and (_iter < self.max_iter)
+                canIter = (p2.where("cx != cj").count() > 0) and (_iter < self.max_iter)
                 if canIter:
                     del p1
-                    p1 = p2.selectExpr('id', 'cj as c').checkpoint()
+                    p1 = p2.selectExpr("id", "cj as c").checkpoint()
                 del p2
                 _iter += 1
 
             # Calculate new modularity and update pass counter
             modularity1 = self._calculate_modularity(
-                edges=edges,
-                partition=p1,
-                resolution=self.resolution,
-                m=m
+                edges=edges, partition=p1, resolution=self.resolution, m=m
             )
 
             # Declare stopping criterion and update old modularity
-            canPass = (modularity1 - modularity0 > self.min_modularity_gain) and (_pass < self.max_pass)
+            canPass = (modularity1 - modularity0 > self.min_modularity_gain) and (
+                _pass < self.max_pass
+            )
             modularity0 = modularity1
-            
+
             self.modularity_ = modularity0
 
             # Update ret and compress graph
             if canPass:
-                ret = (
-                    ret
-                    .join(
-                        other=p1.selectExpr(f'id as pass{_pass}', f'c as pass{_pass + 1}'),
-                        on=f'pass{_pass}'
-                    )  # Checkpoint???
-                )
+                ret = ret.join(
+                    other=p1.selectExpr(f"id as pass{_pass}", f"c as pass{_pass + 1}"),
+                    on=f"pass{_pass}",
+                )  # Checkpoint???
 
                 edges = (
                     self._label_edges(edges, p1)
-                    .select('cSrc', 'cDst', 'weight')
-                    .groupBy('cSrc', 'cDst')
-                    .agg(F.sum('weight').alias('weight'))
-                    .selectExpr('cSrc as src', 'cDst as dst', 'weight')
+                    .select("cSrc", "cDst", "weight")
+                    .groupBy("cSrc", "cDst")
+                    .agg(F.sum("weight").alias("weight"))
+                    .selectExpr("cSrc as src", "cDst as dst", "weight")
                     .checkpoint()
                 )
             _pass += 1
@@ -215,12 +202,11 @@ class LouvainCommunities(BaseClass):
         # Return final dataframe with id & community
         else:
             _last = self._last_pass(ret)
-            ret = ret.selectExpr('id as node_id', f'{_last} as cluster')
+            ret = ret.selectExpr("id as node_id", f"{_last} as cluster")
 
         self.labels_ = ret
-        
-        return self
 
+        return self
 
     def _verify_data(self, df, expected_cols_grouping, expected_cols_others):
         """Checks if `edges` meets the format expected by `louvainCommunities`.
@@ -235,7 +221,7 @@ class LouvainCommunities(BaseClass):
 
         # Check type
         if not isinstance(df, DataFrame):
-            raise TypeError('Input data must be a pyspark DataFrame.')
+            raise TypeError("Input data must be a pyspark DataFrame.")
 
         # Check missing columns
         msg = "Input data is missing expected column '{}'."
@@ -245,20 +231,18 @@ class LouvainCommunities(BaseClass):
 
         # Hard-check columns
         if cols != expected_cols:
-            msg = f'Expecting columns {expected_cols}. Got {cols} instead.'
+            msg = f"Expecting columns {expected_cols}. Got {cols} instead."
             raise ValueError(msg)
 
         # Check for duplicates
         dup = (
-            df
-            .groupBy(*expected_cols_grouping)
-            .agg(F.count(F.lit(1)).alias('count'))
-            .where('count > 1')
+            df.groupBy(*expected_cols_grouping)
+            .agg(F.count(F.lit(1)).alias("count"))
+            .where("count > 1")
             .count()
         )
         if dup > 0:
             raise ValueError("Data has duplicated entries.")
-
 
     def _last_pass(self, df):
         """Returns the column name of the last pass.
@@ -271,14 +255,13 @@ class LouvainCommunities(BaseClass):
         """
 
         # Get all `passX` columns as list
-        cols = [col for col in df.columns if 'pass' in col]
+        cols = [col for col in df.columns if "pass" in col]
 
         # Get last pass as int
-        _max = max([int(col.split('pass')[1]) for col in cols])
+        _max = max([int(col.split("pass")[1]) for col in cols])
 
         # Return last pass as string
-        return f'pass{_max}'
-
+        return f"pass{_max}"
 
     def _label_degrees(self, edges, partition):
         """
@@ -300,7 +283,7 @@ class LouvainCommunities(BaseClass):
                 node's ID) and `c` (indicating each node's assigned community).
 
         Returns:
-            (Dataframe): 
+            (Dataframe):
                 This function returns a dataframe with columns `id` (representing the ID
                 of each node in the graph), `c` (representing each node's community) and
                 `degree` (representing each node's degree).
@@ -317,25 +300,19 @@ class LouvainCommunities(BaseClass):
         """
 
         # Get id, community and weighted degree
-        ret = (
-            partition
-            .join(
-                # Unite sources and destinations to avoid double join
-                other=(
-                    edges
-                    .selectExpr('src as id', 'weight')
-                    .unionByName(edges.selectExpr('dst as id', 'weight'))
-                    .groupBy('id')
-                    .agg(F.sum('weight').alias('degree'))
-                ),
-                on='id',
-                how='inner'
-            )
-            .select('id', 'c', 'degree')
-        )
+        ret = partition.join(
+            # Unite sources and destinations to avoid double join
+            other=(
+                edges.selectExpr("src as id", "weight")
+                .unionByName(edges.selectExpr("dst as id", "weight"))
+                .groupBy("id")
+                .agg(F.sum("weight").alias("degree"))
+            ),
+            on="id",
+            how="inner",
+        ).select("id", "c", "degree")
 
         return ret
-
 
     def _label_edges(self, edges, partition):
         """This function uses `partition` to add two columns to `edges`. The added
@@ -356,7 +333,7 @@ class LouvainCommunities(BaseClass):
                 node's ID) and `c` (indicating each node's assigned community).
 
         Returns:
-            edges (pyspark.sql.dataframe.DataFrame): 
+            edges (pyspark.sql.dataframe.DataFrame):
                 This function returns `edges` with two additional columns: the community
                 that the source node belongs to (`cSrc`) and the community that the
                 destination node belongs to (`cDst`).
@@ -376,23 +353,22 @@ class LouvainCommunities(BaseClass):
         ret = (
             edges
             # Start off with src, dst and weight
-            .select('src', 'dst', 'weight')
+            .select("src", "dst", "weight")
             # Source destination
             .join(
-                other=partition.selectExpr('id as src', 'c as cSrc'),
-                on='src',
-                how='left'
+                other=partition.selectExpr("id as src", "c as cSrc"),
+                on="src",
+                how="left",
             )
             # Destination community
             .join(
-                other=partition.selectExpr('id as dst', 'c as cDst'),
-                on='dst',
-                how='left'
+                other=partition.selectExpr("id as dst", "c as cDst"),
+                on="dst",
+                how="left",
             )
         )
 
         return ret
-
 
     def _calculate_m(self, edges) -> int:
         """Get the weighted size of an undirected graph (as in [1]_, where $m$ is
@@ -409,17 +385,12 @@ class LouvainCommunities(BaseClass):
             (int): Returns the weighted size of the graph.
         """
 
-        m = edges.select(F.sum('weight')).collect()[0][0]
+        m = edges.select(F.sum("weight")).collect()[0][0]
 
         return int(m)
 
-
     def _calculate_modularity(
-        self,
-        edges,
-        partition,
-        resolution: Union[float, int] = 1,
-        m=None
+        self, edges, partition, resolution: Union[float, int] = 1, m=None
     ) -> float:
         """This function calculates the modularity of a partition.
 
@@ -446,7 +417,7 @@ class LouvainCommunities(BaseClass):
                 The weighted size of the graph (the output of `getM()`).
 
         Returns:
-            (float): 
+            (float):
                 Bound between -1 and 1 representing the modularity of a
                 partition. The output may exceed these bounds depending on the value of
                 `resolution` (which is set to 1 by default).
@@ -458,7 +429,7 @@ class LouvainCommunities(BaseClass):
 
         # Check compliance of resolution param
         if resolution < 0:
-            exceptionMsg = f'Resolution value is {resolution} and cannot be < 0.'
+            exceptionMsg = f"Resolution value is {resolution} and cannot be < 0."
             raise ValueError(exceptionMsg)
 
         # Declare basic inputs
@@ -466,26 +437,22 @@ class LouvainCommunities(BaseClass):
         labeledDegrees = self._label_degrees(edges, partition)
 
         # Get term on LHS
-        k_in = (
-            labeledEdges
-            .where('cSrc = cDst')
-            .select(F.sum('weight'))
-        ).collect()[0][0]
+        k_in = (labeledEdges.where("cSrc = cDst").select(F.sum("weight"))).collect()[0][
+            0
+        ]
 
         # Handle NoneType
         k_in = 0 if k_in is None else k_in
 
         # Get term on RHS
         k_out = (
-            labeledDegrees
-            .groupby('c')
-            .agg(F.sum('degree').alias('kC'))
+            labeledDegrees.groupby("c")
+            .agg(F.sum("degree").alias("kC"))
             .selectExpr(f"{resolution} * sum(kC * kC)")
         ).collect()[0][0]
 
         # Return modularity
         return (k_in / m) - (norm**2 * float(k_out))
-
 
     def _reassign_all(self, edges, partition, m=None):
         """This function simultaneously reassigns all the nodes in a graph to their
@@ -523,117 +490,97 @@ class LouvainCommunities(BaseClass):
 
         # Add sum(ki) for i in C to labeledDegrees
         dq = (
-            labeledDegrees
-            .withColumn(
-                'cx_sum_ki',
-                F.sum('degree').over(Window.partitionBy('c'))
+            labeledDegrees.withColumn(
+                "cx_sum_ki", F.sum("degree").over(Window.partitionBy("c"))
             )
             # Get sum(Aix) for i in Cx\{x}
             .join(
                 other=(
-                    labeledEdges
-                    .where('(src != dst) and (cSrc = cDst)')
-                    .selectExpr('src as id', 'weight')
+                    labeledEdges.where("(src != dst) and (cSrc = cDst)")
+                    .selectExpr("src as id", "weight")
                     .unionByName(
-                        labeledEdges
-                        .where('(src != dst) and (cSrc = cDst)')
-                        .selectExpr('dst as id', 'weight')
+                        labeledEdges.where("(src != dst) and (cSrc = cDst)").selectExpr(
+                            "dst as id", "weight"
+                        )
                     )
-                    .groupBy('id')
-                    .agg(F.sum('weight').alias('cx_sum_aix'))
+                    .groupBy("id")
+                    .agg(F.sum("weight").alias("cx_sum_aix"))
                 ),
-                on='id',
-                how='left'
+                on="id",
+                how="left",
             )
             # Get sum(Aix) for i in Cj (relationship 1:J)
             .join(
                 other=(
-                    labeledEdges
-                    .where('cSrc != cDst')
-                    .selectExpr('src as id', 'cDst as cj', 'weight')
+                    labeledEdges.where("cSrc != cDst")
+                    .selectExpr("src as id", "cDst as cj", "weight")
                     .unionByName(
-                        labeledEdges
-                        .where('cSrc != cDst')
-                        .selectExpr('dst as id', 'cSrc as cj', 'weight')
+                        labeledEdges.where("cSrc != cDst").selectExpr(
+                            "dst as id", "cSrc as cj", "weight"
+                        )
                     )
-                    .groupBy('id', 'cj')
-                    .agg(F.sum('weight').alias('cj_sum_aix'))
+                    .groupBy("id", "cj")
+                    .agg(F.sum("weight").alias("cj_sum_aix"))
                 ),
-                on='id',
-                how='left'
+                on="id",
+                how="left",
             )
             # Get sum(ki) for i in Cj
             .join(
                 other=(
-                    labeledDegrees
-                    .withColumnRenamed('c', 'cj')
-                    .groupBy('cj')
-                    .agg(F.sum('degree').alias('cj_sum_ki'))
+                    labeledDegrees.withColumnRenamed("c", "cj")
+                    .groupBy("cj")
+                    .agg(F.sum("degree").alias("cj_sum_ki"))
                 ),
-                on='cj',
-                how='left'
+                on="cj",
+                how="left",
             )
             # Calculate modularity change of each possible switch (Cx -> {x} -> Cj)
             .withColumn(
-                'mdq',
-                F.coalesce('cj_sum_aix', F.lit(0))
-                - F.coalesce('cx_sum_aix', F.lit(0))
+                "mdq",
+                F.coalesce("cj_sum_aix", F.lit(0))
+                - F.coalesce("cx_sum_aix", F.lit(0))
                 - (
-                    F.col('degree') / F.lit(2 * m)
-                    * (F.col('cj_sum_ki') - F.col('cx_sum_ki') + F.col('degree'))
-                )
+                    F.col("degree")
+                    / F.lit(2 * m)
+                    * (F.col("cj_sum_ki") - F.col("cx_sum_ki") + F.col("degree"))
+                ),
             )
             # Rank mdq(x) in descending order
             .select(
-                F.col('id'),
-                F.col('c'),
-                F.coalesce('cj', F.col('c')).alias('cj'),  # Trapped nodes: Cx == Cj
-                F.col('mdq'),
-                F.row_number().over(
-                    Window
-                    .partitionBy('id')
-                    .orderBy(F.desc('mdq'))
-                ).alias('mdq_rank')
+                F.col("id"),
+                F.col("c"),
+                F.coalesce("cj", F.col("c")).alias("cj"),  # Trapped nodes: Cx == Cj
+                F.col("mdq"),
+                F.row_number()
+                .over(Window.partitionBy("id").orderBy(F.desc("mdq")))
+                .alias("mdq_rank"),
             )
             # Keep best (or first) change
-            .where(F.col('mdq_rank') == 1)
+            .where(F.col("mdq_rank") == 1)
         )
 
         # Break symmetric swaps (only in first iteration?)
         dq = (
-            dq
-            .withColumn(
-                'sym_rank',
+            dq.withColumn(
+                "sym_rank",
                 F.row_number().over(
-                    Window
-                    .partitionBy(
-                        F.sort_array(
-                            F.array(F.col('c'), F.col('cj'))
-                        )
-                    )
-                    .orderBy(F.desc('mdq'))
-                )
+                    Window.partitionBy(
+                        F.sort_array(F.array(F.col("c"), F.col("cj")))
+                    ).orderBy(F.desc("mdq"))
+                ),
             )
             # Select best switch (cStar) and break symmetric swaps with sym_rank
             .withColumn(
-                'cStar',
+                "cStar",
                 F.when(
-                    (
-                        (F.col('mdq') > F.lit(1e-04))
-                        & (F.col('sym_rank') == 1)
-                    ),
-                    F.col('cj')
-                ).otherwise(F.col('c'))
-            )
-            .selectExpr(
-                'id',
-                'c as cx',
-                'cStar as cj'
-            )
+                    ((F.col("mdq") > F.lit(1e-04)) & (F.col("sym_rank") == 1)),
+                    F.col("cj"),
+                ).otherwise(F.col("c")),
+            ).selectExpr("id", "c as cx", "cStar as cj")
         )
 
         return dq
-
 
     def _sort_passes(self, res) -> list:
         """Takes the output of `louvainCommunities` and returns a list containing
@@ -650,8 +597,8 @@ class LouvainCommunities(BaseClass):
         """
 
         # Get pass-columns and sort them by their integer part
-        cols = [col for col in res.columns if 'pass' in col]
-        ints = sorted([int(col.replace('pass', '')) for col in cols])
-        cols_sorted = ['id'] + ['pass' + str(i) for i in ints]
+        cols = [col for col in res.columns if "pass" in col]
+        ints = sorted([int(col.replace("pass", "")) for col in cols])
+        cols_sorted = ["id"] + ["pass" + str(i) for i in ints]
 
         return cols_sorted

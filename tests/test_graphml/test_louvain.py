@@ -17,9 +17,8 @@ class TestLouvain(object):
         louvain_clustering = LouvainCommunities()
 
         assert isinstance(louvain_clustering, LouvainCommunities)
-        
-        assert louvain_clustering.max_iter == 10  # Default value
 
+        assert louvain_clustering.max_iter == 10  # Default value
 
     def test_fit(self):
         """
@@ -36,21 +35,24 @@ class TestLouvain(object):
                 (5, 3, 1),
                 (5, 4, 1),
                 (7, 6, 1),
-                (8, 6, 1)
+                (8, 6, 1),
             ],
-            schema=['src', 'dst', 'weight']
+            schema=["src", "dst", "weight"],
         )
-        df_nodes = SparkInterface().spark.createDataFrame(pd.DataFrame({
-            'node_id': ['0', '1', '2', '3', '4', '5', '6', '7', '8'],
-        }))
+        df_nodes = SparkInterface().spark.createDataFrame(
+            pd.DataFrame(
+                {
+                    "node_id": ["0", "1", "2", "3", "4", "5", "6", "7", "8"],
+                }
+            )
+        )
 
-        g = Graph(data=df_edges,
-                  nodes=df_nodes,
-                  keys={"src": "src",
-                        "dst": "dst",
-                        "weight": "value",
-                        "id": "node_id"})
-        
+        g = Graph(
+            data=df_edges,
+            nodes=df_nodes,
+            keys={"src": "src", "dst": "dst", "weight": "value", "id": "node_id"},
+        )
+
         louvain_clustering = LouvainCommunities()
 
         # Get louvain partitions
@@ -64,27 +66,23 @@ class TestLouvain(object):
         assert communities.count() == 9
 
         ## Test if the global optimum can be found
-        
+
         # Get last pass
         col = communities.columns[-1]
 
         # Group by col and get nodes in each community
         partition = (
-            communities
-            .select('id', col)
-            .groupBy(col)
-            .agg(collect_set('id').alias('c'))
+            communities.select("id", col).groupBy(col).agg(collect_set("id").alias("c"))
         ).collect()
 
         # Turn partition to list of sets
-        partition = [set(row['c']) for row in partition]
+        partition = [set(row["c"]) for row in partition]
 
         # Best communities (global maximum)
         c1, c2, c3 = {0, 1, 2}, {3, 4, 5}, {6, 7, 8}
 
         # Check if partition matches global max
         assert (c1 in partition) and (c2 in partition) and (c3 in partition)
-
 
     def test_sortPasses_lt10(self):
         """
@@ -93,19 +91,17 @@ class TestLouvain(object):
 
         # Define list of columns sorted by their integer part
         _passes = 5
-        cols_expected = ['id'] + [f'pass{i}' for i in range(_passes + 1)]
+        cols_expected = ["id"] + [f"pass{i}" for i in range(_passes + 1)]
 
         # Declare df with shuffled columns
         t = SparkInterface().spark.createDataFrame(
-            data=[tuple([1] * (_passes + 2))],
-            schema=sorted(cols_expected)
+            data=[tuple([1] * (_passes + 2))], schema=sorted(cols_expected)
         )
 
         louvain_clustering = LouvainCommunities()
 
         # Check if sortPasses sorts columns in expected order
         assert louvain_clustering._sort_passes(t) == cols_expected
-
 
     def test_sortPasses_gt10(self):
         """
@@ -114,53 +110,51 @@ class TestLouvain(object):
 
         # Define list of columns sorted by their integer part
         _passes = 30
-        cols_expected = ['id'] + [f'pass{i}' for i in range(_passes + 1)]
+        cols_expected = ["id"] + [f"pass{i}" for i in range(_passes + 1)]
 
         # Declare df with shuffled columns
         t = SparkInterface().spark.createDataFrame(
-            data=[tuple([1] * (_passes + 2))],
-            schema=sorted(cols_expected)
+            data=[tuple([1] * (_passes + 2))], schema=sorted(cols_expected)
         )
-        
+
         louvain_clustering = LouvainCommunities()
 
         # Check if sortPasses sorts columns in expected order
         assert louvain_clustering._sort_passes(t) == cols_expected
-
 
     def test_missing_src(self):
         """
         Test error raised by omitting src
         """
 
-        t = SparkInterface().spark.createDataFrame(data=[(1,)], schema=['dst'])
+        t = SparkInterface().spark.createDataFrame(data=[(1,)], schema=["dst"])
 
         expected_msg = "Input data is missing expected column 'src'."
 
         louvain_clustering = LouvainCommunities()
 
         with pytest.raises(ValueError, match=expected_msg):
-            louvain_clustering._verify_data(df=t, 
-                                            expected_cols_grouping=['src'],
-                                            expected_cols_others=[])
-
+            louvain_clustering._verify_data(
+                df=t, expected_cols_grouping=["src"], expected_cols_others=[]
+            )
 
     def test_missing_weight(self):
         """
         Test if function assigns weight column correctly
         """
 
-        t = SparkInterface().spark.createDataFrame(data=[(1, 0)], schema=['src', 'dst'])
+        t = SparkInterface().spark.createDataFrame(data=[(1, 0)], schema=["src", "dst"])
 
         expected_msg = "Input data is missing expected column 'weight'."
 
         louvain_clustering = LouvainCommunities()
 
         with pytest.raises(ValueError, match=expected_msg):
-            assert louvain_clustering._verify_data(df=t,
-                                                   expected_cols_grouping=['src', 'dst'],
-                                                   expected_cols_others=['weight'])
-
+            assert louvain_clustering._verify_data(
+                df=t,
+                expected_cols_grouping=["src", "dst"],
+                expected_cols_others=["weight"],
+            )
 
     def test_lastPass_lt10(self):
         """
@@ -171,13 +165,12 @@ class TestLouvain(object):
 
         t = SparkInterface().spark.createDataFrame(
             data=[tuple([1] * (_passes + 2))],
-            schema=['id'] + [f'pass{str(i)}' for i in range(_passes + 1)]
+            schema=["id"] + [f"pass{str(i)}" for i in range(_passes + 1)],
         )
 
         louvain_clustering = LouvainCommunities()
 
-        assert louvain_clustering._last_pass(t) == f'pass{_passes}'
-
+        assert louvain_clustering._last_pass(t) == f"pass{_passes}"
 
     def test_lastPass_gt10(self):
         """
@@ -188,9 +181,9 @@ class TestLouvain(object):
 
         t = SparkInterface().spark.createDataFrame(
             data=[tuple([1] * (_passes + 2))],
-            schema=['id'] + [f'pass{str(i)}' for i in range(_passes + 1)]
+            schema=["id"] + [f"pass{str(i)}" for i in range(_passes + 1)],
         )
 
         louvain_clustering = LouvainCommunities()
 
-        assert louvain_clustering._last_pass(t) == f'pass{_passes}'
+        assert louvain_clustering._last_pass(t) == f"pass{_passes}"
