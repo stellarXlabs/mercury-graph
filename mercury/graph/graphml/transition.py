@@ -11,18 +11,17 @@ from mercury.graph.graphml.base import BaseClass
 
 class Transition(BaseClass):
     """
-    Create an interface class to manage the adjacency matrix of a directed graph as a transition matrix. 
+    Create an interface class to manage the adjacency matrix of a directed graph as a transition matrix.
     This enables computing distributions of probabilities over the nodes after a given number of iterations.
 
     Args
-        G_markov_ (Graph): A `mercury.graph` Graph resulting from calling method fit() on a Graph, 
+        G_markov_ (Graph): A `mercury.graph` Graph resulting from calling method fit() on a Graph,
             where its adjacency matrix has been converted into a transition matrix.
 
     """
 
     def __init__(self):
         self.G_markov_ = None
-
 
     def fit(self, G: Graph):
         """
@@ -73,7 +72,6 @@ class Transition(BaseClass):
 
         return self
 
-
     def to_pandas(self, num_iterations=1):
         """
         Returns the adjacency (which is the transition matrix after .fit() was called) for a given number of iterations as a pandas
@@ -95,7 +93,7 @@ class Transition(BaseClass):
         """
         if self.G_markov_ is None:
             raise ValueError("Error: fit() must be called first.")
-        
+
         names = list(self.G_markov_.networkx.nodes)
         adj_m = nx.adjacency_matrix(self.G_markov_.networkx, weight="weight").todense()
 
