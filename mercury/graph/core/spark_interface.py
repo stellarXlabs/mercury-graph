@@ -46,6 +46,7 @@ class SparkInterface:
         __init__(self, config=None): Initializes the SparkInterface object.
         _create_spark_session(config): Creates a Spark session.
         spark: Property that returns the shared Spark session.
+        pyspark: Property that returns the pyspark namespace.
         graphframes: Property that returns the shared graphframes namespace.
         dgl: Property that returns the shared dgl namespace.
         read_csv(path, **kwargs): Reads a CSV file into a DataFrame.
@@ -97,6 +98,11 @@ class SparkInterface:
     @property
     def spark(self):
         return SparkInterface._spark_session
+
+
+    @property
+    def pyspark(self):
+        return pyspark
 
 
     @property
