@@ -589,31 +589,30 @@ class Graph:
         """ This internal method handles the logic of a property. It returns the networkx graph that already exists
         or converts it from the graphframes graph if not."""
 
-        if self._as_networkx is None:
-            self._as_networkx = nx.DiGraph()
+        if self._is_directed:
+            g = nx.DiGraph()
+        else:
+            g = nx.Graph()
 
-            for _, row in self.nodes_as_pandas().iterrows():
-                attr = row.drop(['src', 'dst']).to_dict()
-                self._as_networkx.add_edge(row['src'], row['dst'], **attr)
+        for _, row in self.edges_as_pandas().iterrows():
+            attr = row.drop(['src', 'dst']).to_dict()
+            g.add_edge(row['src'], row['dst'], **attr)
 
-            for _, row in self.edges_as_pandas().iterrows():
-                attr = row.drop(['id']).to_dict()
-                self._as_networkx.add_node(row['id'], **attr)
+        for _, row in self.nodes_as_pandas().iterrows():
+            attr = row.drop(['id']).to_dict()
+            g.add_node(row['id'], **attr)
 
-        return self._as_networkx
+        return g
 
 
     def _to_graphframe(self):
         """ This internal method handles the logic of a property. It returns the graphframes graph that already exists
         or converts it from the networkx graph if not."""
 
-        if self._as_graphframe is None:
-            nodes = self.nodes_as_dataframe()
-            edges = self.edges_as_dataframe()
+        nodes = self.nodes_as_dataframe()
+        edges = self.edges_as_dataframe()
 
-            self._as_graphframe = SparkInterface().graphframes.GraphFrame(nodes, edges)
-
-        return self._as_graphframe
+        return SparkInterface().graphframes.GraphFrame(nodes, edges)
 
 
     def _to_dgl(self):
