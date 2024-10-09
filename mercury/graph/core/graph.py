@@ -504,6 +504,9 @@ class Graph:
         else:
             g = nx.Graph()
 
+        if weight in edges.columns:
+            edges = edges.rename(columns={weight: "weight"})
+
         for _, row in edges.iterrows():
             attr = row.drop([src, dst]).to_dict()
             g.add_edge(row[src], row[dst], **attr)
