@@ -180,7 +180,7 @@ class LouvainCommunities(BaseClass):
                 ret = ret.join(
                     other=p1.selectExpr(f"id as pass{_pass}", f"c as pass{_pass + 1}"),
                     on=f"pass{_pass}",
-                )  # Checkpoint???
+                )
 
                 edges = (
                     self._label_edges(edges, p1)
