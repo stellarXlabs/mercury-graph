@@ -62,9 +62,6 @@ class SparkRandomWalker(BaseClass):
         of the path walked and another column with the corresponding weights. The weights represent the probability of
         folowing that specific path starting from source_id.
         """
-        if G.graphframe is None:
-            ValueError("Object has no Graphframes instance.")
-
         self.paths_ = self._run_rw(
             G, source_id, self.num_epochs, self.batch_size, self.n_sampling_edges
         )
