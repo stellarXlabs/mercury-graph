@@ -1,5 +1,8 @@
+import re
+import pytest
 import pandas as pd
 import networkx
+
 from mercury.graph.graphml import Transition
 from mercury.graph.core import Graph
 
@@ -73,6 +76,10 @@ class TestTransition(object):
         Tests method Transition.to_pandas
         """
         T = Transition()
+
+        expected_msg = re.escape("Error: fit() must be called first.")
+        with pytest.raises(ValueError, match=expected_msg):
+            tm = T.to_pandas(num_iterations=0)
 
         T.fit(g)
 
