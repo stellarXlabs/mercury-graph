@@ -20,11 +20,11 @@ def cleanup():
 @pytest.fixture(scope="session")
 def g_comtrade():
     df_edges = pd.read_csv(
-        "mercury/graph/examples/un_comtrade_2016_sample.csv", sep="\t"
+        "tutorials/data/un_comtrade_2016_sample.csv", sep="\t"
     )
 
     df_names = pd.read_csv(
-        "mercury/graph/examples/un_comtrade_2016_names.csv", sep="\t"
+        "tutorials/data/un_comtrade_2016_names.csv", sep="\t"
     )
 
     df_edges = (
