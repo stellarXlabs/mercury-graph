@@ -54,7 +54,15 @@ class TestSparkNode2Vec(object):
         Tests method SparkNode2Vec.fit
         """
         E = SparkNode2Vec(dimension=2, sampling_ratio=0.5, num_epochs=2)
+        assert type(str(E)) is str and len(str(E)) > 0
+        assert type(repr(E)) is str and len(repr(E)) > 0
+
+        len_str = len(str(E))
         E.fit(g_comtrade)
+
+        len_str_fit = len(str(E))
+        assert len_str_fit > len_str
+
         assert E.model() is not None
         assert E.get_most_similar_nodes("Algeria").columns == ["word", "similarity"]
 
