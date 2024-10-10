@@ -1,3 +1,4 @@
+import pytest
 import pandas as pd
 
 from mercury.graph.core import Graph
@@ -11,16 +12,21 @@ class TestSpectral(object):
         """
 
         spectral_clustering = SpectralClustering()
-
         assert isinstance(spectral_clustering, SpectralClustering)
+
+        assert type(str(spectral_clustering)) is str and len(str(spectral_clustering)) > 0
+        assert type(repr(spectral_clustering)) is str and len(repr(spectral_clustering)) > 0
 
     def test___init__(self):
         """
         Tests method SpectralClustering.__init__
         """
         spectral_clustering = SpectralClustering(4)
-
         assert spectral_clustering.n_clusters == 4
+
+        expected_msg = "Error: Mode must be either 'networkx' or 'spark'"
+        with pytest.raises(ValueError, match=expected_msg):
+            spectral_clustering = SpectralClustering(4, mode="wrong")
 
     def test_fit(self):
         """
@@ -55,7 +61,10 @@ class TestSpectral(object):
 
         spectral_clustering = SpectralClustering(3)
 
+        len_str = len(str(spectral_clustering))
         spectral_clustering.fit(g)
+        len_str_fit = len(str(spectral_clustering))
+        assert len_str_fit > len_str
 
         assert spectral_clustering.labels_.shape[0] == 12
         assert (
