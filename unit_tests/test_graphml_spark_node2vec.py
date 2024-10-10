@@ -46,7 +46,8 @@ class TestSparkNode2Vec(object):
 
         assert E.embedding() is None
         assert E.model() is None
-        assert E.get_most_similar_nodes("me") is None
+        assert E.save() is None
+        assert E.get_most_similar_nodes("NA") is None
 
     def test_fit(self, g_comtrade):
         """
@@ -55,6 +56,7 @@ class TestSparkNode2Vec(object):
         E = SparkNode2Vec(dimension=2, sampling_ratio=0.5, num_epochs=2)
         E.fit(g_comtrade)
         assert E.model() is not None
+        assert E.get_most_similar_nodes("Algeria").columns == ["word", "similarity"]
 
     def test__save__load(self, g_comtrade):
         """

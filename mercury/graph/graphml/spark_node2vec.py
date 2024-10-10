@@ -92,9 +92,6 @@ class SparkNode2Vec(BaseClass):
         self.n_partitions_cache = n_partitions_cache
         self.load_file = load_file
 
-        # Spark session
-        if not pyspark_installed or not graphframes_installed:
-            ValueError("SparkNode2Vec requires Spark and Graphframes.")
         self.spark_session = spark_session
 
         if self.load_file is not None:
@@ -129,8 +126,6 @@ class SparkNode2Vec(BaseClass):
         Random walk paths are available in attribute `paths_`.
         Spark's Word2Vec model fitted on paths_ is available in attribute `node2vec_` through method `model()`.
         """
-        if G.graphframe is None:
-            ValueError("Object has no Graphframes instance.")
 
         if self.path_cache is None:
             if self.use_cached_rw:
