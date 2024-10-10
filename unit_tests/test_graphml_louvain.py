@@ -13,12 +13,16 @@ class TestLouvain(object):
         """
         Tests instancing and __init__ of the class LouvainCommunities
         """
+        # Error with resolution<0
+        with pytest.raises(ValueError):
+            louvain_clustering = LouvainCommunities(resolution=-1)
 
         louvain_clustering = LouvainCommunities()
 
         assert isinstance(louvain_clustering, LouvainCommunities)
-
         assert louvain_clustering.max_iter == 10  # Default value
+        assert type(str(louvain_clustering)) is str and len(str(louvain_clustering)) > 0
+        assert type(repr(louvain_clustering)) is str and len(repr(louvain_clustering)) > 0
 
     def test_fit(self):
         """
@@ -56,8 +60,12 @@ class TestLouvain(object):
         louvain_clustering = LouvainCommunities()
 
         # Get louvain partitions
+        len_str = len(str(louvain_clustering))
         louvain_clustering.fit(g)
         communities = louvain_clustering.labels_
+
+        len_str_fit = len(str(louvain_clustering))
+        assert len_str_fit > len_str
 
         ## Check communities' type (pyspark df)
         assert type(communities) == type(df_edges)
@@ -122,33 +130,55 @@ class TestLouvain(object):
         # Check if sortPasses sorts columns in expected order
         assert louvain_clustering._sort_passes(t) == cols_expected
 
-    def test_missing_src(self):
+    def test_verify_data(self):
         """
-        Test error raised by omitting src
+        Test errors raised by data verification method (_verify_data())
         """
+        louvain_clustering = LouvainCommunities()
 
+        # Test error raised by omitting src
         t = SparkInterface().spark.createDataFrame(data=[(1,)], schema=["dst"])
 
         expected_msg = "Input data is missing expected column 'src'."
-
-        louvain_clustering = LouvainCommunities()
-
         with pytest.raises(ValueError, match=expected_msg):
             louvain_clustering._verify_data(
                 df=t, expected_cols_grouping=["src"], expected_cols_others=[]
             )
 
-    def test_missing_weight(self):
-        """
-        Test if function assigns weight column correctly
-        """
-
+        # Test if function assigns weight column correctly
         t = SparkInterface().spark.createDataFrame(data=[(1, 0)], schema=["src", "dst"])
 
         expected_msg = "Input data is missing expected column 'weight'."
+        with pytest.raises(ValueError, match=expected_msg):
+            assert louvain_clustering._verify_data(
+                df=t,
+                expected_cols_grouping=["src", "dst"],
+                expected_cols_others=["weight"],
+            )
 
-        louvain_clustering = LouvainCommunities()
+        # Test if wrong input dataset type is detected
+        expected_msg = "Input data must be a pyspark DataFrame."
+        with pytest.raises(TypeError, match=expected_msg):
+            assert louvain_clustering._verify_data(
+                df=t.toPandas(),
+                expected_cols_grouping=["src", "dst"],
+                expected_cols_others=["weight"],
+            )
 
+        # Test when cols != expected_cols
+        t = SparkInterface().spark.createDataFrame(data=[(1, 0, 2, 5)], schema=["src", "dst", "weight", "extra"])
+
+        with pytest.raises(ValueError):
+            assert louvain_clustering._verify_data(
+                df=t,
+                expected_cols_grouping=["src", "dst"],
+                expected_cols_others=["weight"],
+            )
+
+        # Test when duplicate values are found in the dataset
+        t = SparkInterface().spark.createDataFrame(data=[(1, 0, 1), (1, 0, 1)], schema=["src", "dst", "weight"])
+
+        expected_msg = "Data has duplicated entries."
         with pytest.raises(ValueError, match=expected_msg):
             assert louvain_clustering._verify_data(
                 df=t,

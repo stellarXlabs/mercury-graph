@@ -143,7 +143,7 @@ class LouvainCommunities(BaseClass):
                 .unionByName(edges.selectExpr("dst as id"))
                 .distinct()
                 .withColumn("c", F.col("id"))
-            )  # From ret???
+            )
 
             # Begin iterations within pass
             canIter, _iter = True, 0
@@ -426,11 +426,6 @@ class LouvainCommunities(BaseClass):
         # Calculate m (if necessary) and norm
         m = self._calculate_m(edges) if m is None else m
         norm = 1 / (2 * m)
-
-        # Check compliance of resolution param
-        if resolution < 0:
-            exceptionMsg = f"Resolution value is {resolution} and cannot be < 0."
-            raise ValueError(exceptionMsg)
 
         # Declare basic inputs
         labeledEdges = self._label_edges(edges, partition)
