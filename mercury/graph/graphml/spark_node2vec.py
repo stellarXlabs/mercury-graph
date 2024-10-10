@@ -3,7 +3,7 @@ import logging
 from mercury.graph.core import Graph
 from mercury.graph.graphml.base import BaseClass
 
-from mercury.graph.core.spark_interface import pyspark_installed, graphframes_installed
+from mercury.graph.core.spark_interface import SparkInterface, pyspark_installed, graphframes_installed
 
 if pyspark_installed:
     import pyspark.sql.functions as f
@@ -34,7 +34,6 @@ class SparkNode2Vec(BaseClass):
 
     def __init__(
         self,
-        spark_session=None,
         dimension=None,
         sampling_ratio=1.0,
         num_epochs=10,
@@ -91,8 +90,6 @@ class SparkNode2Vec(BaseClass):
         self.use_cached_rw = use_cached_rw
         self.n_partitions_cache = n_partitions_cache
         self.load_file = load_file
-
-        self.spark_session = spark_session
 
         if self.load_file is not None:
             self._load(self.load_file)
@@ -175,7 +172,7 @@ class SparkNode2Vec(BaseClass):
             self.paths_ = paths.persist()
         else:
             self.paths_ = (
-                self.spark_session.read.parquet(self.path_cache)
+                SparkInterface().read_parquet(self.path_cache)
                 .drop("block")
                 .repartition(self.n_partitions_cache)
                 .persist()

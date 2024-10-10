@@ -46,7 +46,7 @@ class TestSparkNode2Vec(object):
 
         assert E.embedding() is None
         assert E.model() is None
-        assert E.save() is None
+        assert E.save("filepath") is None
         assert E.get_most_similar_nodes("NA") is None
 
     def test_fit(self, g_comtrade):
@@ -64,7 +64,9 @@ class TestSparkNode2Vec(object):
         assert len_str_fit > len_str
 
         assert E.model() is not None
-        assert E.get_most_similar_nodes("Algeria").columns == ["word", "similarity"]
+        assert E.get_most_similar_nodes(
+            E.embedding().select("word").first()[0]
+        ).columns == ["word", "similarity"]
 
     def test__save__load(self, g_comtrade):
         """
@@ -137,7 +139,6 @@ class TestSparkNode2Vec(object):
             path_cache=PATH_CACHE_RW,
             use_cached_rw=False,
             n_partitions_cache=10,
-            spark_session=SparkInterface().spark,
         )
         E1.fit(g_comtrade)
         # check paths have been written
@@ -145,11 +146,7 @@ class TestSparkNode2Vec(object):
 
         # Now load persisted random walks
         E2 = SparkNode2Vec(
-            dimension=2,
-            path_cache=PATH_CACHE_RW,
-            use_cached_rw=True,
-            num_epochs=2,
-            spark_session=SparkInterface().spark,
+            dimension=2, path_cache=PATH_CACHE_RW, use_cached_rw=True, num_epochs=2
         )
         E2.fit(g_comtrade)
         assert E2.paths_.count() == SparkInterface().read_parquet(PATH_CACHE_RW).count()
