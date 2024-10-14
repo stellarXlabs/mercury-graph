@@ -62,7 +62,7 @@ class TestTransition(object):
 
         T.fit(g)
 
-        tm = networkx.adjacency_matrix(T.G_markov_.networkx, weight="weight")
+        tm = networkx.adjacency_matrix(T.fitted_graph_.networkx, weight="weight")
 
         for i in range(tm.shape[0]):
             assert tm[[i], :].sum() == 1

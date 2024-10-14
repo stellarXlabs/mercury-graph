@@ -49,7 +49,7 @@ class TestSparkSpreadingActivation(object):
 
         spread_act.fit(G, seed_nodes=["C", "D"])
 
-        df_result = spread_act.updated_graph_.nodes_as_pandas()
+        df_result = spread_act.fitted_graph_.nodes_as_pandas()
 
         # Sum of total influence equals number of initial seed nodes
         assert round(df_result["influence"].sum(), 3) == 2.0
@@ -79,7 +79,7 @@ class TestSparkSpreadingActivation(object):
 
         g_spread = spread_act.fit(G, seed_nodes=df_seed_nodes)
 
-        df_result = g_spread.updated_graph_.nodes_as_pandas()
+        df_result = g_spread.fitted_graph_.nodes_as_pandas()
 
         # Sum of total influence equals number of initial seed nodes
         assert round(df_result["influence"].sum(), 3) == 3.0
@@ -97,7 +97,7 @@ class TestSparkSpreadingActivation(object):
 
         g_spread = spread_act.fit(G, seed_nodes=["D"])
 
-        df_result = g_spread.updated_graph_.nodes_as_pandas()
+        df_result = g_spread.fitted_graph_.nodes_as_pandas()
 
         assert round(df_result[df_result["id"] == "D"]["influence"].values[0], 3) == 0.8
         assert round(df_result[df_result["id"] == "C"]["influence"].values[0], 3) == 0.1
@@ -114,7 +114,7 @@ class TestSparkSpreadingActivation(object):
 
         g_spread = spread_act.fit(G, seed_nodes=["D"])
 
-        df_result = g_spread.updated_graph_.nodes_as_pandas()
+        df_result = g_spread.fitted_graph_.nodes_as_pandas()
 
         assert round(df_result[df_result["id"] == "D"]["influence"].values[0], 3) == 0.8
         assert (
@@ -138,7 +138,7 @@ class TestSparkSpreadingActivation(object):
             seed_nodes=["D"],
         )
 
-        df_result = g_spread.updated_graph_.nodes_as_pandas()
+        df_result = g_spread.fitted_graph_.nodes_as_pandas()
 
         assert round(df_result[df_result["id"] == "D"]["influence"].values[0], 3) == 0.4
 
@@ -153,7 +153,7 @@ class TestSparkSpreadingActivation(object):
 
         g_spread = spread_act.fit(G, seed_nodes=["A", "D"])
 
-        df_result = g_spread.updated_graph_.nodes_as_pandas()
+        df_result = g_spread.fitted_graph_.nodes_as_pandas()
 
         assert set(df_result[df_result["id"] == "A"]["influenced_by"].values[0]) == {
             "A",

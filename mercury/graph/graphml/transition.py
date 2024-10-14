@@ -15,13 +15,13 @@ class Transition(BaseClass):
     This enables computing distributions of probabilities over the nodes after a given number of iterations.
 
     Args
-        G_markov_ (Graph): A `mercury.graph` Graph resulting from calling method fit() on a Graph,
+        fitted_graph_ (Graph): A `mercury.graph` Graph resulting from calling method fit() on a Graph,
             where its adjacency matrix has been converted into a transition matrix.
 
     """
 
     def __init__(self):
-        self.G_markov_ = None
+        self.fitted_graph_ = None
 
     def fit(self, G: Graph):
         """
@@ -68,7 +68,7 @@ class Transition(BaseClass):
                 adj_m[[i], :] = row
 
         df = pd.DataFrame(adj_m.todense(), index=names, columns=names)
-        self.G_markov_ = Graph(nx.from_pandas_adjacency(df, create_using=nx.DiGraph))
+        self.fitted_graph_ = Graph(nx.from_pandas_adjacency(df, create_using=nx.DiGraph))
 
         return self
 
@@ -91,11 +91,11 @@ class Transition(BaseClass):
             The result of computing num_iterations will not make sense if .fit() has not been called before .to_pandas().
 
         """
-        if self.G_markov_ is None:
+        if self.fitted_graph_ is None:
             raise ValueError("Error: fit() must be called first.")
 
-        names = list(self.G_markov_.networkx.nodes)
-        adj_m = nx.adjacency_matrix(self.G_markov_.networkx, weight="weight").todense()
+        names = list(self.fitted_graph_.networkx.nodes)
+        adj_m = nx.adjacency_matrix(self.fitted_graph_.networkx, weight="weight").todense()
 
         if num_iterations != 1:
             adj_m = matrix_power(adj_m, num_iterations)

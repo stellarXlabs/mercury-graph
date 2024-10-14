@@ -108,7 +108,7 @@ class SparkSpreadingActivation(BaseClass):
             )
 
         # graph with updated attributes
-        self.updated_graph_ = g
+        self.fitted_graph_ = g
 
         return self
 
