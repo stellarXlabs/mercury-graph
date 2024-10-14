@@ -6,7 +6,6 @@ pd.DataFrame.iteritems = pd.DataFrame.items  # In case pandas>=2.0 and Spark<3.4
 
 from mercury.graph.core import Graph
 
-
 TEST_FOLDER = "./spark_test_data"
 TEST_SAVE = TEST_FOLDER + "/save"
 PATH_CACHE_RW = TEST_FOLDER + "/cache"
@@ -19,13 +18,9 @@ def cleanup():
 # Create common graph for tests from UN COMTRADE dataset
 @pytest.fixture(scope="session")
 def g_comtrade():
-    df_edges = pd.read_csv(
-        "tutorials/data/un_comtrade_2016_sample.csv", sep="\t"
-    )
+    df_edges = pd.read_csv("tutorials/data/un_comtrade_2016_sample.csv", sep="\t")
 
-    df_names = pd.read_csv(
-        "tutorials/data/un_comtrade_2016_names.csv", sep="\t"
-    )
+    df_names = pd.read_csv("tutorials/data/un_comtrade_2016_names.csv", sep="\t")
 
     df_edges = (
         df_edges.merge(df_names.rename(columns={"id": "ori"}), on="ori", how="inner")
