@@ -140,7 +140,7 @@ class TestSpectral(object):
         )
         assert (
             labels_.cluster[labels_["node_id"] == "a"].values[0]
-            == labels_.cluster[labels_["node_id"] == "e"].values[0]
+            == labels_.cluster[labels_["node_id"] == "z"].values[0]
         )
 
         assert spectral_clustering.modularity_ > 0
