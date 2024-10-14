@@ -46,7 +46,7 @@ class NodeIterator:
         ky = self.key_list[self.ix]
 
         if self.graph._as_networkx is not None:
-            d = self.graph._as_networkx.nodes[ky]
+            d = self.graph._as_networkx.nodes[ky].copy()
             d['id'] = ky
 
             return d
@@ -95,7 +95,7 @@ class EdgeIterator:
         ky = self.key_list[self.ix]
 
         if self.graph._as_networkx is not None:
-            d = self.graph._as_networkx.edges[ky]
+            d = self.graph._as_networkx.edges[ky].copy()
             d['src'] = ky[0]
             d['dst'] = ky[1]
 
@@ -432,7 +432,7 @@ class Graph:
             nodes_df   = pd.DataFrame([(node, attr) for node, attr in nodes_data], columns = ['id', 'attributes'])
 
             attrs_df = pd.json_normalize(nodes_df['attributes'])
-                        
+
             return pd.concat([nodes_df.drop('attributes', axis = 1), attrs_df], axis = 1)
 
         return self.graphframe.vertices.toPandas()
@@ -509,7 +509,7 @@ class Graph:
             g = nx.Graph()
 
         if weight in edges.columns:
-            edges = edges.rename(columns={weight: "weight"})
+            edges = edges.rename(columns = {weight: 'weight'})
 
         for _, row in edges.iterrows():
             attr = row.drop([src, dst]).to_dict()
@@ -532,6 +532,10 @@ class Graph:
             raise ImportError('graphframes is not installed')
 
         if keys is None:
+            src = 'src'
+            dst = 'dst'
+            id  = 'id'
+            weight = 'weight'
             directed = True
         else:
             src = keys.get('src', 'src')
@@ -540,17 +544,17 @@ class Graph:
             weight = keys.get('weight', 'weight')
             directed = keys.get('directed', True)
 
-            edges = edges.withColumnRenamed(src, 'src').withColumnRenamed(dst, 'dst')
+        edges = edges.withColumnRenamed(src, 'src').withColumnRenamed(dst, 'dst')
 
-            if weight in edges.columns:
-                edges = edges.withColumnRenamed(weight, 'weight')
+        if weight in edges.columns:
+            edges = edges.withColumnRenamed(weight, 'weight')
 
-            if nodes is not None:
-                nodes = nodes.withColumnRenamed(id, 'id')
-            else:
-                src_nodes = edges.select(src).distinct().withColumnRenamed(src, id)
-                dst_nodes = edges.select(dst).distinct().withColumnRenamed(dst, id)
-                nodes = src_nodes.union(dst_nodes).distinct()
+        if nodes is not None:
+            nodes = nodes.withColumnRenamed(id, 'id')
+        else:
+            src_nodes = edges.select(src).distinct().withColumnRenamed(src, id)
+            dst_nodes = edges.select(dst).distinct().withColumnRenamed(dst, id)
+            nodes = src_nodes.union(dst_nodes).distinct()
 
         g = SparkInterface().graphframes.GraphFrame(nodes, edges)
 
