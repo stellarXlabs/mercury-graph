@@ -44,9 +44,6 @@ class SparkSpreadingActivation(BaseClass):
     (https://pdfs.semanticscholar.org/3275/3d80adb5ec2d4a974b5d1a872e2c957b263b.pdf)
 
     Args:
-        edge_index (int): If G is a multigraph, what edge class should be used in the algorithm. This index is zero-based. To see what
-            edge classes G has, you can `print(G.summary(detailed = True))` and note that `"edges"` is a list. It's the position in that
-            list.
         attribute (str): Column name which will store the amount of influence spread
         spreading_factor (float): Percentage of influence to distribute. Low values favor influence proximity to the source of injection,
             while high values allow the influence to also reach nodes which are further away. It must be a value in the range (0,1).

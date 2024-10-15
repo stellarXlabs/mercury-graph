@@ -12,11 +12,11 @@ def _elliptic_rotate(self_em, iu, iv, cos_w, sin_w):
         u = self_em[j]
         v = self_em[iv[i]]
 
-        sc = np.dot(u, v)/np.dot(u, u)
-        pv = sc*u
+        sc = np.dot(u, v) / np.dot(u, u)
+        pv = sc * u
         tv = v - pv
 
-        self_em[j] = cos_w*pv/sc + sin_w*tv
+        self_em[j] = cos_w * pv / sc + sin_w * tv
 
     return self_em
 
@@ -32,6 +32,9 @@ class Embeddings:
             automatically match the nodes in a graph.
         mean (float): The (expected) mean of the initial values.
         sd (float): The (expected) standard deviation of the initial values.
+        learn_step (float): The size of the learning step elements get approached or moved away. Units are hexadecimal degrees in along
+            an ellipse.
+        bidirectional (bool): Should the changes apply only to the elements of first column (False) or to both.
 
     Note:
         **On dimension:** Embeddings cannot be zero (that is against the whole concept). Smaller dimension embeddings can only hold
@@ -42,18 +45,22 @@ class Embeddings:
         impossible!
     """
 
-    def __init__(self, dimension, num_elements=0, mean=0, sd=1):
+    def __init__(
+        self, dimension, num_elements=0, mean=0, sd=1, learn_step=3, bidirectional=False
+    ):
         self.dimension = dimension
         self.num_elements = num_elements
         self.mean = mean
         self.sd = sd
-        self.em = None
+        self.learn_step = learn_step
+        self.bidirectional = bidirectional
 
-        if num_elements > 0:
-            self.em = np.random.normal(mean, sd, (num_elements, dimension))
+        if self.num_elements > 0:
+            self.embeddings_matrix_ = np.random.normal(
+                self.mean, self.sd, (self.num_elements, self.dimension)
+            )
 
-
-    def learn(self, converge=None, diverge=None, learn_step=3, bidirectional=False):
+    def fit(self, converge=None, diverge=None):
         """
         Apply a learning step to the embedding.
 
@@ -62,12 +69,9 @@ class Embeddings:
                 (second column).
             diverge (numpy matrix of two columns): A matrix of indices to elements meaning (first column) should be moved away from
                 (second column).
-            learn_step (float): The size of the learning step elements get approached or moved away. Units are hexadecimal degrees in along
-                an ellipse.
-            bidirectional (bool): Should the changes apply only to the elements of first column (False) or to both.
 
         Returns:
-            (None): None (or raises an error)
+            (self): Fitted self (or raises an error)
 
         Note:
             Embeddings start being randomly distributed and hold no structure other than spurious correlations. Each time you apply a
@@ -76,32 +80,47 @@ class Embeddings:
             much an embedding can learn can be estimated by measuring how row correlations are converging towards some asymptotic values.
         """
 
-        w = learn_step*np.pi/180
+        w = self.learn_step * np.pi / 180
 
         cos_w = np.cos(w)
         sin_w = np.sin(w)
 
         if converge is not None:
-            self.em = _elliptic_rotate(self.em, converge[:, 0], converge[:, 1], cos_w, sin_w)
+            self.embeddings_matrix_ = _elliptic_rotate(
+                self.embeddings_matrix_, converge[:, 0], converge[:, 1], cos_w, sin_w
+            )
 
-            if bidirectional:
-                self.em = _elliptic_rotate(self.em, converge[:, 1], converge[:, 0], cos_w, sin_w)
+            if self.bidirectional:
+                self.embeddings_matrix_ = _elliptic_rotate(
+                    self.embeddings_matrix_,
+                    converge[:, 1],
+                    converge[:, 0],
+                    cos_w,
+                    sin_w,
+                )
 
         if diverge is not None:
-            self.em = _elliptic_rotate(self.em, diverge[:, 0], diverge[:, 1], cos_w, -sin_w)
+            self.embeddings_matrix_ = _elliptic_rotate(
+                self.embeddings_matrix_, diverge[:, 0], diverge[:, 1], cos_w, -sin_w
+            )
 
-            if bidirectional:
-                self.em = _elliptic_rotate(self.em, diverge[:, 1], diverge[:, 0], cos_w, -sin_w)
+            if self.bidirectional:
+                self.embeddings_matrix_ = _elliptic_rotate(
+                    self.embeddings_matrix_, diverge[:, 1], diverge[:, 0], cos_w, -sin_w
+                )
 
+        return self
 
     def as_numpy(self):
         """
         Return the embedding as a numpy matrix where each row is an embedding.
         """
-        return self.em
+        if not hasattr(self, "embeddings_matrix_"):
+            return
 
+        return self.embeddings_matrix_
 
-    def get_most_similar_embeddings(self, index, k=5, metric='cosine'):
+    def get_most_similar_embeddings(self, index, k=5, metric="cosine"):
         """
         Given an index of a vector in the embedding matrix, returns the k most similar embeddings in the matrix
 
@@ -113,13 +132,28 @@ class Embeddings:
         Returns:
             (list): list of k most similar nodes as indices and list of similarities of the most similar nodes
         """
-        if metric == 'cosine':
-            similarities = 1 - cdist(np.expand_dims(self.as_numpy()[index], axis=0), self.as_numpy(), 'cosine')[0]
+        if metric == "cosine":
+            similarities = (
+                1
+                - cdist(
+                    np.expand_dims(self.as_numpy()[index], axis=0),
+                    self.as_numpy(),
+                    "cosine",
+                )[0]
+            )
 
-        elif metric == 'euclidean':
-            similarities = 1/(1 + cdist(np.expand_dims(self.as_numpy()[index], axis=0), self.as_numpy(), 'euclidean')[0])
+        elif metric == "euclidean":
+            similarities = 1 / (
+                1
+                + cdist(
+                    np.expand_dims(self.as_numpy()[index], axis=0),
+                    self.as_numpy(),
+                    "euclidean",
+                )[0]
+            )
+
         else:
-            raise ValueError('Unknown Distance Metric: %s' % metric)
+            raise ValueError("Unknown Distance Metric: %s" % metric)
 
         ordered_indices = np.argsort(similarities)[::-1][1 : (k + 1)]
         ordered_similarities = similarities[ordered_indices]
