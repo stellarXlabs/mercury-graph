@@ -458,6 +458,9 @@ def test_graph_to_dgl():
         core_graph.dgl_installed = True
         SparkInterface._dgl      = mock_dgl
 
+        spi = SparkInterface()
+        assert spi.dgl == mock_dgl
+
         # Here starts the test with the mocked library.
 
         g = Graph(edges_df, keys, nodes_df)
