@@ -628,7 +628,7 @@ class Graph:
         """ This internal method handles the logic of a property. It returns the dgl graph that already exists
         or converts it from the networkx graph if not."""
 
-        if self._as_dgl is None and dgl_installed:
+        if dgl_installed:
             dgl = SparkInterface().dgl
 
             edge_attrs = [c for c in self.edges_colnames if c not in ['src', 'dst']]
