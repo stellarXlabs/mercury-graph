@@ -1,10 +1,12 @@
 import pytest
 
+from unittest.mock import patch, MagicMock
+
 import pandas as pd
 import networkx as nx
 
 from mercury.graph.core.graph import Graph, NodeIterator, EdgeIterator
-from mercury.graph.core.spark_interface import SparkInterface, pyspark_installed, graphframes_installed, dgl_installed
+from mercury.graph.core.spark_interface import SparkInterface, pyspark_installed, graphframes_installed
 
 
 def toy_datasets():
@@ -426,12 +428,55 @@ def test_graph():
 
     check_graph_content(g, short = True, directed = False, weighted = False)
 
-    if not dgl_installed:
-        return
 
-    dgl = g.dgl
+def mock_from_networkx(networkx, edge_attrs = None, node_attrs = None):
+    ret = {'networkx': networkx, 'edge_attrs': edge_attrs, 'node_attrs': node_attrs}
+    return ret
 
-    assert dgl is not None
+
+mock_dgl = MagicMock()
+mock_dgl.from_networkx = mock_from_networkx
+
+
+def test_graph_to_dgl():
+    with patch.dict('sys.modules', {'dgl': mock_dgl}):
+        import mercury.graph.core.spark_interface as sp_int
+        import mercury.graph.core.graph as core_graph
+
+        bak_dgl_installed = sp_int.dgl_installed
+        bak_sp_int_dgl    = SparkInterface._dgl
+
+        sp_int.dgl_installed     = True
+        core_graph.dgl_installed = True
+        SparkInterface._dgl      = mock_dgl
+
+        # Here starts the test with the mocked library.
+
+        edges_df, keys, nodes_df = toy_datasets()
+
+        g = Graph(edges_df, keys, nodes_df)
+
+        mock_ret = g.dgl
+
+        assert type(mock_ret) == dict
+
+        assert type(mock_ret['networkx']) == nx.DiGraph
+
+        assert type(mock_ret['edge_attrs']) == list
+        assert len(mock_ret['edge_attrs']) == 1
+        assert mock_ret['edge_attrs'][0] == 'weight'
+
+        assert type(mock_ret['node_attrs']) == list
+        assert len(mock_ret['node_attrs']) == 2
+        assert 'Role' in mock_ret['node_attrs']
+        assert 'Age' in mock_ret['node_attrs']
+
+        # We restore the state of mercury.graph.core.spark_interface undoing the mocking
+
+        sp_int.dgl_installed     = bak_dgl_installed
+        core_graph.dgl_installed = bak_dgl_installed
+        SparkInterface._dgl      = bak_sp_int_dgl
 
 
 # test_graph()
+# test_graph_to_dgl()
