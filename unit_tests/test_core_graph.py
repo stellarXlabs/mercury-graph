@@ -6,7 +6,7 @@ import pandas as pd
 import networkx as nx
 
 from mercury.graph.core.graph import Graph, NodeIterator, EdgeIterator
-from mercury.graph.core.spark_interface import SparkInterface, pyspark_installed, graphframes_installed
+from mercury.graph.core.spark_interface import SparkInterface, pyspark_installed, graphframes_installed, dgl_installed
 
 
 def toy_datasets():
@@ -178,6 +178,124 @@ def check_graph_content(g, short = False, directed = True, weighted = True, dupl
     assert df.shape == (10*duplicate, 3)
 
 
+def do_spark_parts(g, nodes_df, edges_df, keys):
+    # Test from a graphframe with everything
+
+    g = Graph(g.graphframe)
+
+    assert g is not None
+    assert g._as_graphframe is not None and g._as_networkx is None
+
+    df = g.nodes_as_pandas()
+    assert df.shape == (7, 3)
+    df = g.edges_as_pandas()
+    assert df.shape == (10, 3)
+
+    s = str(g).replace(' ', '').replace('\n', '')
+    assert '7nodesand10edges' in s
+    assert 's_directed:Trueis_weighted:Truehas_networkx:Falsehas_graphframe:Truehas_dgl:False' in s
+
+    s = repr(g).replace(' ', '').replace('\n', '')
+    assert 'data=GraphFrame(' in s
+    assert 'keys=None' in s
+    assert 'nodes=None' in s
+
+    check_graph_content(g)
+
+    df = g.nodes_as_dataframe()
+    assert len(df.columns) == 3
+    assert df.count() == 7
+
+    df = g.edges_as_dataframe()
+    assert len(df.columns) == 3
+    assert df.count() == 10
+
+    # Test from a pyspark dataframe with everything
+
+    spark = SparkInterface().spark
+
+    nodes_spark = spark.createDataFrame(nodes_df)
+    edges_spark = spark.createDataFrame(edges_df)
+
+    g = Graph(edges_spark, keys, nodes_spark)
+
+    assert g is not None
+    assert g._as_graphframe is not None and g._as_networkx is None
+
+    df = g.nodes_as_pandas()
+    assert df.shape == (7, 3)
+    df = g.edges_as_pandas()
+    assert df.shape == (10, 3)
+
+    s = str(g).replace(' ', '').replace('\n', '')
+    assert '7nodesand10edges' in s
+    assert 's_directed:Trueis_weighted:Truehas_networkx:Falsehas_graphframe:Truehas_dgl:False' in s
+
+    s = repr(g).replace(' ', '').replace('\n', '')
+    assert 'data=DataFrame[Person_A' in s
+    assert 'keys={\'id' in s
+    assert 'nodes=DataFrame[Name' in s
+
+    check_graph_content(g)
+
+    # Test from a pyspark dataframe without node attributes nor keys
+
+    df_spark = edges_spark.select('Person_A', 'Person_B').withColumnRenamed('Person_A', 'src').withColumnRenamed('Person_B', 'dst')
+    g = Graph(df_spark)
+
+    assert g is not None
+    assert g._as_graphframe is not None and g._as_networkx is None
+
+    df = g.nodes_as_pandas()
+    assert df.shape == (7, 1)
+    df = g.edges_as_pandas()
+    assert df.shape == (10, 2)
+
+    s = str(g).replace(' ', '').replace('\n', '')
+    assert '7nodesand10edges' in s
+    assert 's_directed:Trueis_weighted:Falsehas_networkx:Falsehas_graphframe:Truehas_dgl:False' in s
+
+    s = repr(g).replace(' ', '').replace('\n', '')
+    assert 'data=DataFrame[src' in s
+    assert 'keys=None' in s
+    assert 'nodes=None' in s
+
+    check_graph_content(g, short = True, weighted = False)
+
+    # Test from a pyspark dataframe but not directed
+
+    g = Graph(df_spark, keys = {'directed': False})
+
+    assert g is not None
+    assert g._as_graphframe is not None and g._as_networkx is None
+
+    df = g.nodes_as_pandas()
+    assert df.shape == (7, 1)
+    df = g.edges_as_pandas()
+    assert df.shape == (20, 2)
+
+    s = str(g).replace(' ', '').replace('\n', '')
+    assert '7nodesand20edges' in s
+    assert 's_directed:Falseis_weighted:Falsehas_networkx:Falsehas_graphframe:Truehas_dgl:False' in s
+
+    s = repr(g).replace(' ', '').replace('\n', '')
+    assert 'data=DataFrame[src' in s
+    assert 'keys={\'directed' in s
+    assert 'nodes=None' in s
+
+    assert g.is_directed == False
+
+    check_graph_content(g, short = True, directed = False, weighted = False, duplicate = 2)
+
+    gnx = g.networkx
+
+    assert gnx.is_directed() == False
+
+    g = Graph(gnx)  # Conversion to NetworkX made the edges unique, therefore not duplicated anymore.
+
+    check_graph_content(g, short = True, directed = False, weighted = False)
+
+
 def test_graph():
 
     with pytest.raises(ValueError):
@@ -309,124 +427,8 @@ def test_graph():
 
     # Test pyspark and graphframes
 
-    if (not pyspark_installed) or (not graphframes_installed):
-        return
-
-    # Test from a graphframe with everything
-
-    g = Graph(g.graphframe)
-
-    assert g is not None
-    assert g._as_graphframe is not None and g._as_networkx is None
-
-    df = g.nodes_as_pandas()
-    assert df.shape == (7, 3)
-    df = g.edges_as_pandas()
-    assert df.shape == (10, 3)
-
-    s = str(g).replace(' ', '').replace('\n', '')
-    assert '7nodesand10edges' in s
-    assert 's_directed:Trueis_weighted:Truehas_networkx:Falsehas_graphframe:Truehas_dgl:False' in s
-
-    s = repr(g).replace(' ', '').replace('\n', '')
-    assert 'data=GraphFrame(' in s
-    assert 'keys=None' in s
-    assert 'nodes=None' in s
-
-    check_graph_content(g)
-
-    df = g.nodes_as_dataframe()
-    assert len(df.columns) == 3
-    assert df.count() == 7
-
-    df = g.edges_as_dataframe()
-    assert len(df.columns) == 3
-    assert df.count() == 10
-
-    # Test from a pyspark dataframe with everything
-
-    spark = SparkInterface().spark
-
-    nodes_spark = spark.createDataFrame(nodes_df)
-    edges_spark = spark.createDataFrame(edges_df)
-
-    g = Graph(edges_spark, keys, nodes_spark)
-
-    assert g is not None
-    assert g._as_graphframe is not None and g._as_networkx is None
-
-    df = g.nodes_as_pandas()
-    assert df.shape == (7, 3)
-    df = g.edges_as_pandas()
-    assert df.shape == (10, 3)
-
-    s = str(g).replace(' ', '').replace('\n', '')
-    assert '7nodesand10edges' in s
-    assert 's_directed:Trueis_weighted:Truehas_networkx:Falsehas_graphframe:Truehas_dgl:False' in s
-
-    s = repr(g).replace(' ', '').replace('\n', '')
-    assert 'data=DataFrame[Person_A' in s
-    assert 'keys={\'id' in s
-    assert 'nodes=DataFrame[Name' in s
-
-    check_graph_content(g)
-
-    # Test from a pyspark dataframe without node attributes nor keys
-
-    df_spark = edges_spark.select('Person_A', 'Person_B').withColumnRenamed('Person_A', 'src').withColumnRenamed('Person_B', 'dst')
-    g = Graph(df_spark)
-
-    assert g is not None
-    assert g._as_graphframe is not None and g._as_networkx is None
-
-    df = g.nodes_as_pandas()
-    assert df.shape == (7, 1)
-    df = g.edges_as_pandas()
-    assert df.shape == (10, 2)
-
-    s = str(g).replace(' ', '').replace('\n', '')
-    assert '7nodesand10edges' in s
-    assert 's_directed:Trueis_weighted:Falsehas_networkx:Falsehas_graphframe:Truehas_dgl:False' in s
-
-    s = repr(g).replace(' ', '').replace('\n', '')
-    assert 'data=DataFrame[src' in s
-    assert 'keys=None' in s
-    assert 'nodes=None' in s
-
-    check_graph_content(g, short = True, weighted = False)
-
-    # Test from a pyspark dataframe but not directed
-
-    g = Graph(df_spark, keys = {'directed': False})
-
-    assert g is not None
-    assert g._as_graphframe is not None and g._as_networkx is None
-
-    df = g.nodes_as_pandas()
-    assert df.shape == (7, 1)
-    df = g.edges_as_pandas()
-    assert df.shape == (20, 2)
-
-    s = str(g).replace(' ', '').replace('\n', '')
-    assert '7nodesand20edges' in s
-    assert 's_directed:Falseis_weighted:Falsehas_networkx:Falsehas_graphframe:Truehas_dgl:False' in s
-
-    s = repr(g).replace(' ', '').replace('\n', '')
-    assert 'data=DataFrame[src' in s
-    assert 'keys={\'directed' in s
-    assert 'nodes=None' in s
-
-    assert g.is_directed == False
-
-    check_graph_content(g, short = True, directed = False, weighted = False, duplicate = 2)
-
-    gnx = g.networkx
-
-    assert gnx.is_directed() == False
-
-    g = Graph(gnx)  # Conversion to NetworkX made the edges unique, therefore not duplicated anymore.
-
-    check_graph_content(g, short = True, directed = False, weighted = False)
+    if pyspark_installed and graphframes_installed:
+        do_spark_parts(g, nodes_df, edges_df, keys)
 
 
 def mock_from_networkx(networkx, edge_attrs = None, node_attrs = None):
@@ -439,6 +441,12 @@ mock_dgl.from_networkx = mock_from_networkx
 
 
 def test_graph_to_dgl():
+    edges_df, keys, nodes_df = toy_datasets()
+    g = Graph(edges_df, keys, nodes_df)
+
+    if not dgl_installed:
+        assert g.dgl is None
+
     with patch.dict('sys.modules', {'dgl': mock_dgl}):
         import mercury.graph.core.spark_interface as sp_int
         import mercury.graph.core.graph as core_graph
@@ -451,8 +459,6 @@ def test_graph_to_dgl():
         SparkInterface._dgl      = mock_dgl
 
         # Here starts the test with the mocked library.
-
-        edges_df, keys, nodes_df = toy_datasets()
 
         g = Graph(edges_df, keys, nodes_df)
 
@@ -470,6 +476,21 @@ def test_graph_to_dgl():
         assert len(mock_ret['node_attrs']) == 2
         assert 'Role' in mock_ret['node_attrs']
         assert 'Age' in mock_ret['node_attrs']
+
+        # Same without attributes
+
+        df = edges_df.copy()
+        df.columns = ['src', 'dst', 'weight']
+        df.drop('weight', axis = 1, inplace = True)
+        g = Graph(df)
+
+        mock_ret = g.dgl
+
+        assert type(mock_ret) == dict
+
+        assert type(mock_ret['networkx']) == nx.DiGraph
+        assert mock_ret['edge_attrs'] is None
+        assert mock_ret['node_attrs'] is None
 
         # We restore the state of mercury.graph.core.spark_interface undoing the mocking
 
