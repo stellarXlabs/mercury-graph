@@ -186,13 +186,14 @@ class Graph:
 
         spark_int = SparkInterface()
 
-        if pyspark_installed and type(data) == spark_int.type_spark_dataframe:
-            self._from_dataframe(data, nodes, keys)
-            return
+        if pyspark_installed and graphframes_installed:
+            if type(data) == spark_int.type_spark_dataframe:
+                self._from_dataframe(data, nodes, keys)
+                return
 
-        if graphframes_installed and type(data) == spark_int.type_graphframe:
-            self._from_graphframes(data)
-            return
+            if type(data) == spark_int.type_graphframe:
+                self._from_graphframes(data)
+                return
 
         raise ValueError('Invalid input data. (Expected: pandas DataFrame, a networkx Graph, a pyspark DataFrame, a graphframes Graph.)')
 
@@ -528,9 +529,6 @@ class Graph:
 
         It takes the constructor arguments and does not return anything. It sets the internal state of the object.
         """
-        if not graphframes_installed:
-            raise ImportError('graphframes is not installed')
-
         if keys is None:
             src = 'src'
             dst = 'dst'
