@@ -149,7 +149,3 @@ class SparkInterface:
 
     def udf(self, f, returnType):
         return self.spark.udf.register(f.__name__, f, returnType)
-
-
-    def stop(self):
-        return self.spark.stop()
