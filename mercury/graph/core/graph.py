@@ -631,12 +631,12 @@ class Graph:
         if self._as_dgl is None and dgl_installed:
             dgl = SparkInterface().dgl
 
-            edge_attrs = [c for c in self.networkx.columns if c not in ['src', 'dst']]
-            if len(edge_attrs) > 0:
+            edge_attrs = [c for c in self.edges_colnames if c not in ['src', 'dst']]
+            if len(edge_attrs) == 0:
                 edge_attrs = None
 
-            node_attrs = [c for c in self.networkx.columns if c not in ['id']]
-            if len(node_attrs) > 0:
+            node_attrs = [c for c in self.nodes_colnames if c not in ['id']]
+            if len(node_attrs) == 0:
                 node_attrs = None
 
             self._as_dgl = dgl.from_networkx(self.networkx, edge_attrs = edge_attrs, node_attrs = node_attrs)
