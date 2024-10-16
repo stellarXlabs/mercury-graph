@@ -29,7 +29,7 @@ class SparkRandomWalker(BaseClass):
                 "cache a continue" so to say.
             n_sampling_edges (int): by setting this parameter you can limit at each timestep the number of new paths opened from each node.
                 This is useful when the graph contains nodes with very high out-degree, where running the algorithm several epochs is
-                not factible. When using this parameter, the graph will consider only at most `edge_sampling` outgoing edges at each
+                not feasible. When using this parameter, the graph will consider only at most `edge_sampling` outgoing edges at each
                 epoch for each path. If the last node of the path contains more than `edge_sampling` the selected edges are sampled
                 using its weight.
         """
@@ -60,7 +60,7 @@ class SparkRandomWalker(BaseClass):
 
         Attribute `paths_` contains a Spark Dataframe with a columns `random_walks` containing an array of the elements
         of the path walked and another column with the corresponding weights. The weights represent the probability of
-        folowing that specific path starting from source_id.
+        following that specific path starting from source_id.
         """
         self.paths_ = self._run_rw(
             G, source_id, self.num_epochs, self.batch_size, self.n_sampling_edges
