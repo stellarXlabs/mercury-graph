@@ -1,26 +1,24 @@
 import importlib.util
 
 
-if importlib.util.find_spec('pyspark') is None:
-    pyspark_installed = False
-    graphframes_installed = False
-else:
+pyspark_installed = False
+graphframes_installed = False
+dgl_installed = False
+
+if importlib.util.find_spec('pyspark') is not None:
     pyspark_installed = True
 
     import pyspark
 
-    if importlib.util.find_spec('graphframes') is None:
-        graphframes_installed = False
-    else:
+    if importlib.util.find_spec('graphframes') is not None:
         graphframes_installed = True
+
         import graphframes as gf
 
+if importlib.util.find_spec('dgl') is not None:
+	dgl_installed = True
 
-if importlib.util.find_spec('dgl') is None:
-    dgl_installed = False
-else:
-        dgl_installed = True
-        import dgl
+	import dgl
 
 
 # Define the Spark configuration options by default
@@ -46,6 +44,7 @@ class SparkInterface:
         __init__(self, config=None): Initializes the SparkInterface object.
         _create_spark_session(config): Creates a Spark session.
         spark: Property that returns the shared Spark session.
+        pyspark: Property that returns the pyspark namespace.
         graphframes: Property that returns the shared graphframes namespace.
         dgl: Property that returns the shared dgl namespace.
         read_csv(path, **kwargs): Reads a CSV file into a DataFrame.
@@ -73,6 +72,8 @@ class SparkInterface:
                 SparkInterface._spark_session = session
             else:
                 SparkInterface._spark_session = self._create_spark_session(config)
+                # Set checkpoint directory
+                SparkInterface._spark_session.sparkContext.setCheckpointDir(".checkpoint")
 
         if SparkInterface._graphframes is None and graphframes_installed:
             SparkInterface._graphframes = gf
@@ -97,6 +98,11 @@ class SparkInterface:
     @property
     def spark(self):
         return SparkInterface._spark_session
+
+
+    @property
+    def pyspark(self):
+        return pyspark
 
 
     @property
@@ -145,7 +151,3 @@ class SparkInterface:
 
     def udf(self, f, returnType):
         return self.spark.udf.register(f.__name__, f, returnType)
-
-
-    def stop(self):
-        return self.spark.stop()
