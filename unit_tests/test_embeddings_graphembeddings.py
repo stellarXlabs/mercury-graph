@@ -152,7 +152,7 @@ class TestGraphEmbedding(object):
         """
         Tests functions _random_node_weighted and _random_walks
         """
-        j_matrix = scipy.sparse.csr.csr_matrix((7, 7))
+        j_matrix = scipy.sparse.csr_matrix((7, 7))
 
         j_matrix[0, 1] = 25
         j_matrix[0, 2] = 10
