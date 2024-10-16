@@ -46,7 +46,7 @@ class NodeIterator:
         ky = self.key_list[self.ix]
 
         if self.graph._as_networkx is not None:
-            d = self.graph._as_networkx.nodes[ky]
+            d = self.graph._as_networkx.nodes[ky].copy()
             d['id'] = ky
 
             return d
@@ -95,7 +95,7 @@ class EdgeIterator:
         ky = self.key_list[self.ix]
 
         if self.graph._as_networkx is not None:
-            d = self.graph._as_networkx.edges[ky]
+            d = self.graph._as_networkx.edges[ky].copy()
             d['src'] = ky[0]
             d['dst'] = ky[1]
 
@@ -186,13 +186,14 @@ class Graph:
 
         spark_int = SparkInterface()
 
-        if pyspark_installed and type(data) == spark_int.type_spark_dataframe:
-            self._from_dataframe(data, nodes, keys)
-            return
+        if pyspark_installed and graphframes_installed:
+            if type(data) == spark_int.type_spark_dataframe:
+                self._from_dataframe(data, nodes, keys)
+                return
 
-        if graphframes_installed and type(data) == spark_int.type_graphframe:
-            self._from_graphframes(data)
-            return
+            if type(data) == spark_int.type_graphframe:
+                self._from_graphframes(data)
+                return
 
         raise ValueError('Invalid input data. (Expected: pandas DataFrame, a networkx Graph, a pyspark DataFrame, a graphframes Graph.)')
 
@@ -431,10 +432,9 @@ class Graph:
             nodes_data = self._as_networkx.nodes(data = True)
             nodes_df   = pd.DataFrame([(node, attr) for node, attr in nodes_data], columns = ['id', 'attributes'])
 
-            attr_df = pd.json_normalize(nodes_df['attributes'])
-            nodes_df = pd.concat([nodes_df["id"], attr_df], axis=1)
-            
-            return nodes_df
+            attrs_df = pd.json_normalize(nodes_df['attributes'])
+
+            return pd.concat([nodes_df.drop('attributes', axis = 1), attrs_df], axis = 1)
 
         return self.graphframe.vertices.toPandas()
 
@@ -451,10 +451,9 @@ class Graph:
             edges_data = self._as_networkx.edges(data = True)
             edges_df   = pd.DataFrame([(src, dst, attr) for src, dst, attr in edges_data], columns = ['src', 'dst', 'attributes'])
 
-            attr_df = pd.json_normalize(edges_df['attributes'])
-            edges_df = pd.concat([edges_df[["src", "dst"]], attr_df], axis=1)
-            
-            return edges_df
+            attrs_df   = pd.json_normalize(edges_df['attributes'])
+
+            return pd.concat([edges_df.drop('attributes', axis = 1), attrs_df], axis = 1)
 
         return self.graphframe.edges.toPandas()
 
@@ -511,7 +510,7 @@ class Graph:
             g = nx.Graph()
 
         if weight in edges.columns:
-            edges = edges.rename(columns={weight: "weight"})
+            edges = edges.rename(columns = {weight: 'weight'})
 
         for _, row in edges.iterrows():
             attr = row.drop([src, dst]).to_dict()
@@ -530,10 +529,11 @@ class Graph:
 
         It takes the constructor arguments and does not return anything. It sets the internal state of the object.
         """
-        if not graphframes_installed:
-            raise ImportError('graphframes is not installed')
-
         if keys is None:
+            src = 'src'
+            dst = 'dst'
+            id  = 'id'
+            weight = 'weight'
             directed = True
         else:
             src = keys.get('src', 'src')
@@ -542,17 +542,17 @@ class Graph:
             weight = keys.get('weight', 'weight')
             directed = keys.get('directed', True)
 
-            edges = edges.withColumnRenamed(src, 'src').withColumnRenamed(dst, 'dst')
+        edges = edges.withColumnRenamed(src, 'src').withColumnRenamed(dst, 'dst')
 
-            if weight in edges.columns:
-                edges = edges.withColumnRenamed(weight, 'weight')
+        if weight in edges.columns:
+            edges = edges.withColumnRenamed(weight, 'weight')
 
-            if nodes is not None:
-                nodes = nodes.withColumnRenamed(id, 'id')
-            else:
-                src_nodes = edges.select(src).distinct().withColumnRenamed(src, id)
-                dst_nodes = edges.select(dst).distinct().withColumnRenamed(dst, id)
-                nodes = src_nodes.union(dst_nodes).distinct()
+        if nodes is not None:
+            nodes = nodes.withColumnRenamed(id, 'id')
+        else:
+            src_nodes = edges.select(src).distinct().withColumnRenamed(src, id)
+            dst_nodes = edges.select(dst).distinct().withColumnRenamed(dst, id)
+            nodes = src_nodes.union(dst_nodes).distinct()
 
         g = SparkInterface().graphframes.GraphFrame(nodes, edges)
 
@@ -626,15 +626,15 @@ class Graph:
         """ This internal method handles the logic of a property. It returns the dgl graph that already exists
         or converts it from the networkx graph if not."""
 
-        if self._as_dgl is None and dgl_installed:
+        if dgl_installed:
             dgl = SparkInterface().dgl
 
-            edge_attrs = [c for c in self.networkx.columns if c not in ['src', 'dst']]
-            if len(edge_attrs) > 0:
+            edge_attrs = [c for c in self.edges_colnames if c not in ['src', 'dst']]
+            if len(edge_attrs) == 0:
                 edge_attrs = None
 
-            node_attrs = [c for c in self.networkx.columns if c not in ['id']]
-            if len(node_attrs) > 0:
+            node_attrs = [c for c in self.nodes_colnames if c not in ['id']]
+            if len(node_attrs) == 0:
                 node_attrs = None
 
             self._as_dgl = dgl.from_networkx(self.networkx, edge_attrs = edge_attrs, node_attrs = node_attrs)

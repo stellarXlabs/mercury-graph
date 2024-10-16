@@ -1,26 +1,24 @@
 import importlib.util
 
 
-if importlib.util.find_spec('pyspark') is None:
-    pyspark_installed = False
-    graphframes_installed = False
-else:
+pyspark_installed = False
+graphframes_installed = False
+dgl_installed = False
+
+if importlib.util.find_spec('pyspark') is not None:
     pyspark_installed = True
 
     import pyspark
 
-    if importlib.util.find_spec('graphframes') is None:
-        graphframes_installed = False
-    else:
+    if importlib.util.find_spec('graphframes') is not None:
         graphframes_installed = True
+
         import graphframes as gf
 
+if importlib.util.find_spec('dgl') is not None:
+	dgl_installed = True
 
-if importlib.util.find_spec('dgl') is None:
-    dgl_installed = False
-else:
-        dgl_installed = True
-        import dgl
+	import dgl
 
 
 # Define the Spark configuration options by default
@@ -153,7 +151,3 @@ class SparkInterface:
 
     def udf(self, f, returnType):
         return self.spark.udf.register(f.__name__, f, returnType)
-
-
-    def stop(self):
-        return self.spark.stop()
