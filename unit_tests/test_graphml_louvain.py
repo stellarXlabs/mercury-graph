@@ -5,7 +5,7 @@ import pandas as pd
 from pyspark.sql.functions import collect_set
 
 from mercury.graph.core import Graph, SparkInterface
-from mercury.graph.graphml import LouvainCommunities
+from mercury.graph.ml import LouvainCommunities
 
 
 class TestLouvain(object):

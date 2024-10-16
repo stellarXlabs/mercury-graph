@@ -1,7 +1,7 @@
 import logging
 
 from mercury.graph.core import Graph
-from mercury.graph.graphml.base import BaseClass
+from mercury.graph.ml.base import BaseClass
 
 from mercury.graph.core.spark_interface import SparkInterface, pyspark_installed, graphframes_installed
 

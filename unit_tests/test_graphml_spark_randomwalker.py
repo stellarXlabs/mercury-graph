@@ -1,4 +1,4 @@
-from mercury.graph.graphml import SparkRandomWalker
+from mercury.graph.ml import SparkRandomWalker
 
 
 class TestSparkRandomWalker(object):

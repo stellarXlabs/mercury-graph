@@ -7,7 +7,7 @@ from mercury.graph.core.spark_interface import (
     pyspark_installed,
     graphframes_installed,
 )
-from mercury.graph.graphml.base import BaseClass
+from mercury.graph.ml.base import BaseClass
 
 if pyspark_installed:
     import pyspark
