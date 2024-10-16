@@ -4,7 +4,7 @@ import pytest
 from conftest import cleanup, TEST_FOLDER, TEST_SAVE, PATH_CACHE_RW
 
 from mercury.graph.core import Graph, SparkInterface
-from mercury.graph.graphml import SparkNode2Vec
+from mercury.graph.embeddings import SparkNode2Vec
 
 
 # Create common graph with dead end nodes for tests

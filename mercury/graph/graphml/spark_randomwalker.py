@@ -1,6 +1,6 @@
 from mercury.graph.core import Graph
 from mercury.graph.graphml.base import BaseClass
-from mercury.graph.graphml.spark_node2vec import udf_select_element_2
+from mercury.graph.embeddings.spark_node2vec import udf_select_element_2
 
 from mercury.graph.core.spark_interface import pyspark_installed, graphframes_installed
 
