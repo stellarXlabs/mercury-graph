@@ -3,6 +3,8 @@ import numpy as np
 from scipy.spatial.distance import cdist
 from mercury.graph.core._njit import njit
 
+from mercury.graph.core.base import BaseClass
+
 
 @njit
 def _elliptic_rotate(self_em, iu, iv, cos_w, sin_w):
@@ -21,7 +23,7 @@ def _elliptic_rotate(self_em, iu, iv, cos_w, sin_w):
     return self_em
 
 
-class Embeddings:
+class Embeddings(BaseClass):
     """
     This class holds a matrix object that is interpreted as the embeddings for any list of objects, not only the nodes of a graph. You
     can see this class as the internal object holding the embedding for other classes such as class GraphEmbedding.

@@ -5,6 +5,7 @@ import numpy as np
 import networkx as nx
 
 from mercury.graph.core import Graph, njit, graph_i4
+from mercury.graph.core.base import BaseClass
 from mercury.graph.embeddings import Embeddings
 
 
@@ -63,7 +64,7 @@ def _random_walks(r_ini, r_len, r_sum, r_col, r_wgt, TotW, n_jmp, max_jpe):
     return (convrge, diverge)
 
 
-class GraphEmbedding:
+class GraphEmbedding(BaseClass):
     """
     Create an embedding mapping the nodes of a graph.
 
