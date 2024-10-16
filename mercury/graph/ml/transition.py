@@ -6,7 +6,7 @@ import networkx as nx
 from numpy.linalg import matrix_power
 
 from mercury.graph.core import Graph
-from mercury.graph.ml.base import BaseClass
+from mercury.graph.core.base import BaseClass
 
 
 class Transition(BaseClass):

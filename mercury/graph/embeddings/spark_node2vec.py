@@ -1,9 +1,13 @@
 import logging
 
 from mercury.graph.core import Graph
-from mercury.graph.ml.base import BaseClass
+from mercury.graph.core.base import BaseClass
 
-from mercury.graph.core.spark_interface import SparkInterface, pyspark_installed, graphframes_installed
+from mercury.graph.core.spark_interface import (
+    SparkInterface,
+    pyspark_installed,
+    graphframes_installed,
+)
 
 if pyspark_installed:
     import pyspark.sql.functions as f
@@ -172,7 +176,8 @@ class SparkNode2Vec(BaseClass):
             self.paths_ = paths.persist()
         else:
             self.paths_ = (
-                SparkInterface().read_parquet(self.path_cache)
+                SparkInterface()
+                .read_parquet(self.path_cache)
                 .drop("block")
                 .repartition(self.n_partitions_cache)
                 .persist()
