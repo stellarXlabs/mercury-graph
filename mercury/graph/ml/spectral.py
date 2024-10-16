@@ -1,5 +1,5 @@
 from mercury.graph.core import Graph
-from mercury.graph.graphml.base import BaseClass
+from mercury.graph.core.base import BaseClass
 from pandas import DataFrame
 from networkx import normalized_laplacian_matrix
 from networkx.algorithms.community import modularity as nx_modularity

@@ -4,7 +4,7 @@ import pytest
 from conftest import cleanup, TEST_FOLDER, TEST_SAVE, PATH_CACHE_RW
 
 from mercury.graph.core import Graph, SparkInterface
-from mercury.graph.graphml import SparkNode2Vec
+from mercury.graph.embeddings import SparkNode2Vec
 
 
 # Create common graph with dead end nodes for tests
@@ -73,7 +73,6 @@ class TestSparkNode2Vec(object):
         Tests method SparkNode2Vec._load
         """
 
-        cleanup()
         os.makedirs(TEST_FOLDER)
 
         E = SparkNode2Vec(
@@ -92,8 +91,6 @@ class TestSparkNode2Vec(object):
 
         assert F.embedding() is not None
         assert F.model() is not None
-
-        cleanup()
 
     def test_graph_dead_end_nodes(self, sample_g_dead_end_nodes):
         """
@@ -152,5 +149,3 @@ class TestSparkNode2Vec(object):
         assert E2.paths_.count() == SparkInterface().read_parquet(PATH_CACHE_RW).count()
 
         assert E2.paths_.count() == E1.paths_.count()
-
-        cleanup()

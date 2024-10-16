@@ -2,7 +2,7 @@ import pytest
 import pandas as pd
 
 from mercury.graph.core import Graph
-from mercury.graph.graphml import SpectralClustering
+from mercury.graph.ml import SpectralClustering
 
 
 class TestSpectral(object):

@@ -3,7 +3,7 @@ import pytest
 import pandas as pd
 import networkx
 
-from mercury.graph.graphml import Transition
+from mercury.graph.ml import Transition
 from mercury.graph.core import Graph
 
 

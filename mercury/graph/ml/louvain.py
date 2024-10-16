@@ -21,7 +21,7 @@ References
     local optimization of modularity. Graph Partitioning (315--345), 2013.
 """
 
-from mercury.graph.graphml.base import BaseClass
+from mercury.graph.core.base import BaseClass
 from mercury.graph.core import Graph
 from pyspark.sql import DataFrame, Window, functions as F
 from typing import Union

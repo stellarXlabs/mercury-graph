@@ -2,7 +2,7 @@ import pandas as pd
 
 from mercury.graph.core import Graph
 from mercury.graph.core.spark_interface import SparkInterface
-from mercury.graph.graphml import SparkSpreadingActivation
+from mercury.graph.ml import SparkSpreadingActivation
 
 # Create graph for testing
 df_edges = pd.DataFrame(
