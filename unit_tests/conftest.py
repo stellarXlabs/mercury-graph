@@ -14,8 +14,14 @@ TEST_SAVE = TEST_FOLDER + "/save"
 PATH_CACHE_RW = TEST_FOLDER + "/cache"
 
 
-def cleanup():
-    shutil.rmtree(TEST_FOLDER, ignore_errors=True)
+@pytest.fixture(scope="session", autouse=True)
+def cleanup(request):
+    # Clean testing directories once we are finished
+    def remove_test_dirs():
+        shutil.rmtree(TEST_FOLDER, ignore_errors=True)
+        shutil.rmtree(".checkpoint", ignore_errors=True)
+
+    request.addfinalizer(remove_test_dirs)
 
 
 # Manage a temporary folder for testing binary files
