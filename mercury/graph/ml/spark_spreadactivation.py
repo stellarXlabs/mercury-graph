@@ -76,7 +76,7 @@ class SparkSpreadingActivation(BaseClass):
     def fit(
         self,
         g: Graph,
-        seed_nodes: Union[List, "pyspark.sql.DataFrame"] = None,
+        seed_nodes: Union[List, "pyspark.sql.DataFrame"],
     ):
         """
         Perform all iterations of spread_activation
