@@ -62,21 +62,19 @@ class SparkRandomWalker(BaseClass):
         of the path walked and another column with the corresponding weights. The weights represent the probability of
         following that specific path starting from source_id.
         """
-        self.paths_ = self._run_rw(
-            G, source_id, self.num_epochs, self.batch_size, self.n_sampling_edges
-        )
+        self.paths_ = self._run_rw(G, source_id)
 
         return self
 
-    def _run_rw(self, G: Graph, source_id, num_epochs, batch_size, n_sampling_edges):
+    def _run_rw(self, G: Graph, source_id):
         self._start_rw(G, source_id)
 
-        for i in range(num_epochs):
+        for i in range(self.num_epochs):
 
-            aux_vert = self._update_state_with_next_step(i, n_sampling_edges)
+            aux_vert = self._update_state_with_next_step(i)
             self.gx = GraphFrame(aux_vert, self.gx.edges)
 
-            if (i + 1) % batch_size == 0:
+            if (i + 1) % self.batch_size == 0:
                 old_aux_vert = aux_vert
                 aux_vert = AggregateMessages.getCachedDataFrame(aux_vert)
                 old_aux_vert.unpersist()
@@ -131,15 +129,15 @@ class SparkRandomWalker(BaseClass):
 
         self.gx = GraphFrame(aux_vert, aux_edges)
 
-    def _update_state_with_next_step(self, i, n_sampling_edges=None):
+    def _update_state_with_next_step(self, i):
         candidate_vert_col = self.gx.vertices.columns
 
         candidate_vert = self.gx.vertices.withColumnRenamed(
             "new_rw_curr_id", "new_rw_prev_id"
         )
 
-        if n_sampling_edges:
-            out_edges = self._sample_edges(n_sampling_edges)
+        if self.n_sampling_edges:
+            out_edges = self._sample_edges()
         else:
             out_edges = self.gx.edges
 
@@ -168,7 +166,7 @@ class SparkRandomWalker(BaseClass):
 
         return selected_next_step
 
-    def _sample_edges(self, n_sampling_edges):
+    def _sample_edges(self):
 
         sampled_edges = self.gx.edges
 
@@ -183,5 +181,7 @@ class SparkRandomWalker(BaseClass):
         sampled_edges = sampled_edges.withColumn(
             "row_number", f.row_number().over(win_steps)
         )
-        sampled_edges = sampled_edges.filter(f.col("row_number") <= n_sampling_edges)
+        sampled_edges = sampled_edges.filter(
+            f.col("row_number") <= self.n_sampling_edges
+        )
         return sampled_edges
