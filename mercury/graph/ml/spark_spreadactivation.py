@@ -101,8 +101,12 @@ class SparkSpreadingActivation(BaseClass):
                 g,
             )
 
-        # graph with updated attributes
+        # Graph with updated attributes
         self.fitted_graph_ = g
+        # Influences as DataFrame
+        self.influences_ = self.fitted_graph_.nodes_as_dataframe().select(
+            "id", "influence"
+        )
 
         return self
 
