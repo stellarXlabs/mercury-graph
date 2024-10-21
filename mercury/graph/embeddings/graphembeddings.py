@@ -87,8 +87,8 @@ class GraphEmbedding(BaseClass):
 
     def __init__(
         self,
-        dimension=None,
-        n_jumps=None,
+        dimension,
+        n_jumps,
         max_per_epoch=None,
         learn_step=3,
         bidirectional=False,
