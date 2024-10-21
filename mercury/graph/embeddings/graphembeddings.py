@@ -94,15 +94,16 @@ class GraphEmbedding(BaseClass):
         load_file=None,
     ):
         """GraphEmbedding class constructor"""
-        if load_file is not None:
-            self._load(load_file)
-            return
-
         self.dimension = dimension
         self.n_jumps = n_jumps
         self.max_per_epoch = max_per_epoch
         self.learn_step = learn_step
         self.bidirectional = bidirectional
+        self.load_file = load_file
+
+        if self.load_file is not None:
+            self._load(self.load_file)
+            return
 
     def __getitem__(self, arg):
         """
