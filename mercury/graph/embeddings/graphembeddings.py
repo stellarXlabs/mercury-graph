@@ -2,6 +2,7 @@ import bz2
 import pickle
 
 import numpy as np
+import pandas as pd
 import networkx as nx
 
 from mercury.graph.core import Graph, njit, graph_i4
@@ -220,6 +221,7 @@ class GraphEmbedding(BaseClass):
 
         Returns:
             (list): list of k most similar nodes and list of similarities of the most similar nodes
+            (DataFrame): A list of k most similar nodes as a `pd.DataFrame[word: string, similarity: double]`
         """
         node_index = self.node_ids.index(node_id)
 
@@ -232,7 +234,7 @@ class GraphEmbedding(BaseClass):
         else:
             nodes = list(ordered_indices)
 
-        return nodes, ordered_similarities
+        return pd.DataFrame({"word": nodes, "similarity": ordered_similarities})
 
     def save(self, file_name, save_embedding=False):
         """
