@@ -87,14 +87,19 @@ class GraphEmbedding(BaseClass):
 
     def __init__(
         self,
-        dimension,
-        n_jumps,
+        dimension=None,
+        n_jumps=None,
         max_per_epoch=None,
         learn_step=3,
         bidirectional=False,
         load_file=None,
     ):
         """GraphEmbedding class constructor"""
+        if load_file is None and (dimension is None or n_jumps is None):
+            raise ValueError(
+                "Parameters dimension and n_jumps are required when load_file is None"
+            )
+
         self.dimension = dimension
         self.n_jumps = n_jumps
         self.max_per_epoch = max_per_epoch

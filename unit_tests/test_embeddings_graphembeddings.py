@@ -41,7 +41,10 @@ class TestGraphEmbedding(object):
         """
         Tests instancing of the class GraphEmbedding
         """
-        ge = GraphEmbedding(dimension=30)
+        with pytest.raises(ValueError):
+            ge = GraphEmbedding(dimension=30)
+
+        ge = GraphEmbedding(dimension=30, n_jumps=100)
 
         assert isinstance(ge, GraphEmbedding)
         assert ge.dimension == 30
@@ -113,7 +116,7 @@ class TestGraphEmbedding(object):
         """
         Tests method GraphEmbedding.get_most_similar_nodes
         """
-        ge = GraphEmbedding(dimension=2)
+        ge = GraphEmbedding(dimension=2, n_jumps=5)
         # Set embedding matrix to known most similar embeddings
         ge.node_ids = ["A", "B", "C", "D"]
         ge.graph_embedding_ = Embeddings(dimension=2)
