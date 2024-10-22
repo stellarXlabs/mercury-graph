@@ -552,7 +552,7 @@ class Graph:
         else:
             src_nodes = edges.select(src).distinct().withColumnRenamed(src, id)
             dst_nodes = edges.select(dst).distinct().withColumnRenamed(dst, id)
-            nodes = src_nodes.union(dst_nodes).distinct()
+            nodes = src_nodes.union(dst_nodes).dropDuplicates([id])
 
         g = SparkInterface().graphframes.GraphFrame(nodes, edges)
 
