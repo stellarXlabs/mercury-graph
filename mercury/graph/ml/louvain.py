@@ -163,9 +163,7 @@ class LouvainCommunities(BaseClass):
                 _iter += 1
 
             # Calculate new modularity and update pass counter
-            modularity1 = self._calculate_modularity(
-                edges=edges, partition=p1, resolution=self.resolution, m=m
-            )
+            modularity1 = self._calculate_modularity(edges=edges, partition=p1, m=m)
 
             # Declare stopping criterion and update old modularity
             canPass = (modularity1 - modularity0 > self.min_modularity_gain) and (
@@ -389,9 +387,7 @@ class LouvainCommunities(BaseClass):
 
         return int(m)
 
-    def _calculate_modularity(
-        self, edges, partition, resolution: Union[float, int] = 1, m=None
-    ) -> float:
+    def _calculate_modularity(self, edges, partition, m=None) -> float:
         """This function calculates the modularity of a partition.
 
         Args:
@@ -443,7 +439,7 @@ class LouvainCommunities(BaseClass):
         k_out = (
             labeledDegrees.groupby("c")
             .agg(F.sum("degree").alias("kC"))
-            .selectExpr(f"{resolution} * sum(kC * kC)")
+            .selectExpr(f"{self.resolution} * sum(kC * kC)")
         ).collect()[0][0]
 
         # Return modularity

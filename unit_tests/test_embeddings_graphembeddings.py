@@ -41,7 +41,10 @@ class TestGraphEmbedding(object):
         """
         Tests instancing of the class GraphEmbedding
         """
-        ge = GraphEmbedding(dimension=30)
+        with pytest.raises(ValueError):
+            ge = GraphEmbedding(dimension=30)
+
+        ge = GraphEmbedding(dimension=30, n_jumps=100)
 
         assert isinstance(ge, GraphEmbedding)
         assert ge.dimension == 30
@@ -113,7 +116,7 @@ class TestGraphEmbedding(object):
         """
         Tests method GraphEmbedding.get_most_similar_nodes
         """
-        ge = GraphEmbedding(dimension=2)
+        ge = GraphEmbedding(dimension=2, n_jumps=5)
         # Set embedding matrix to known most similar embeddings
         ge.node_ids = ["A", "B", "C", "D"]
         ge.graph_embedding_ = Embeddings(dimension=2)
@@ -122,31 +125,27 @@ class TestGraphEmbedding(object):
         )
 
         # cosine distance
-        similar_nodes, similarities = ge.get_most_similar_nodes(
-            "A", metric="cosine", k=10
-        )
-        assert similar_nodes == ["C", "B", "D"]
-        assert round(similarities[0], 4) == 0.8944
-        assert similarities[1] == 0
-        assert similarities[2] == -1
+        similar_nodes_df = ge.get_most_similar_nodes("A", metric="cosine", k=10)
+        assert list(similar_nodes_df["word"]) == ["C", "B", "D"]
+        assert round(similar_nodes_df.loc[0, "similarity"], 4) == 0.8944
+        assert similar_nodes_df.loc[1, "similarity"] == 0
+        assert similar_nodes_df.loc[2, "similarity"] == -1
 
         # euclidean distance
-        similar_nodes, similarities = ge.get_most_similar_nodes(
-            "A", metric="euclidean", k=10
-        )
-        assert similar_nodes == ["C", "B", "D"]
-        assert round(similarities[0], 4) == 0.6667
-        assert round(similarities[1], 4) == 0.4142
-        assert round(similarities[2], 4) == 0.3333
+        similar_nodes_df = ge.get_most_similar_nodes("A", metric="euclidean", k=10)
+        assert list(similar_nodes_df["word"]) == ["C", "B", "D"]
+        assert round(similar_nodes_df.loc[0, "similarity"], 4) == 0.6667
+        assert round(similar_nodes_df.loc[1, "similarity"], 4) == 0.4142
+        assert round(similar_nodes_df.loc[2, "similarity"], 4) == 0.3333
 
         # returning indices
-        similar_nodes, similarities = ge.get_most_similar_nodes(
+        similar_nodes_df = ge.get_most_similar_nodes(
             "A", metric="cosine", k=10, return_as_indices=True
         )
-        assert similar_nodes == [2, 1, 3]
-        assert round(similarities[0], 4) == 0.8944
-        assert similarities[1] == 0
-        assert similarities[2] == -1
+        assert list(similar_nodes_df["word"]) == [2, 1, 3]
+        assert round(similar_nodes_df.loc[0, "similarity"], 4) == 0.8944
+        assert similar_nodes_df.loc[1, "similarity"] == 0
+        assert similar_nodes_df.loc[2, "similarity"] == -1
 
     def test_numba_functions(self):
         """
