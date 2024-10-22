@@ -550,8 +550,8 @@ class Graph:
         if nodes is not None:
             nodes = nodes.withColumnRenamed(id, 'id').dropDuplicates(['id'])
         else:
-            src_nodes = edges.select(src).distinct().withColumnRenamed(src, id)
-            dst_nodes = edges.select(dst).distinct().withColumnRenamed(dst, id)
+            src_nodes = edges.select('src').distinct().withColumnRenamed('src', 'id')
+            dst_nodes = edges.select('dst').distinct().withColumnRenamed('dst', 'id')
             nodes = src_nodes.union(dst_nodes).distinct()
 
         g = SparkInterface().graphframes.GraphFrame(nodes, edges)
