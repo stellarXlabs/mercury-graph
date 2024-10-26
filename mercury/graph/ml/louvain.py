@@ -22,8 +22,10 @@ References
 """
 
 from mercury.graph.core.base import BaseClass
-from mercury.graph.core import Graph
+from mercury.graph.core import Graph, SparkInterface
+
 from pyspark.sql import DataFrame, Window, functions as F
+
 from typing import Union
 
 
@@ -118,7 +120,7 @@ class LouvainCommunities(BaseClass):
             .unionByName(edges.selectExpr("dst as id"))
             .distinct()
             .withColumn("pass0", F.row_number().over(Window.orderBy("id")))
-        )
+        ).checkpoint()
 
         # Convert edges to anonymized src's and dst's
         edges = (
@@ -126,8 +128,7 @@ class LouvainCommunities(BaseClass):
             .join(other=ret.selectExpr("id as src0", "pass0 as src"), on="src0")
             .join(other=ret.selectExpr("id as dst0", "pass0 as dst"), on="dst0")
             .select("src", "dst", "weight")
-            .checkpoint()
-        )
+        ).checkpoint()
 
         # Calculate m and initialize modularity
         m = self._calculate_m(edges)
@@ -147,19 +148,29 @@ class LouvainCommunities(BaseClass):
 
             # Begin iterations within pass
             canIter, _iter = True, 0
+            # Carry reference to previously cached p2 to call unpersist()
+            prev_p2 = None
             while canIter:
+
+                if _iter >= self.max_iter:
+                    break
 
                 # Print progress
                 if self.verbose:
                     print(f"Starting Pass {_pass} Iteration {_iter}.")
 
                 # Create new partition and check if movements were made
-                p2 = self._reassign_all(edges, p1).checkpoint()
-                canIter = (p2.where("cx != cj").count() > 0) and (_iter < self.max_iter)
+                p2 = self._reassign_all(edges, p1)
+                # Break complex lineage caused by loops first
+                p2 = p2.checkpoint()
+                p2.cache()
+
+                canIter = len(p2.where("cx != cj").take(1)) > 0
                 if canIter:
-                    del p1
-                    p1 = p2.selectExpr("id", "cj as c").checkpoint()
-                del p2
+                    p1 = p2.selectExpr("id", "cj as c")
+                if prev_p2 is not None:
+                    prev_p2.unpersist()
+                prev_p2 = p2
                 _iter += 1
 
             # Calculate new modularity and update pass counter
@@ -178,7 +189,7 @@ class LouvainCommunities(BaseClass):
                 ret = ret.join(
                     other=p1.selectExpr(f"id as pass{_pass}", f"c as pass{_pass + 1}"),
                     on=f"pass{_pass}",
-                )
+                ).checkpoint()
 
                 edges = (
                     self._label_edges(edges, p1)
@@ -186,8 +197,9 @@ class LouvainCommunities(BaseClass):
                     .groupBy("cSrc", "cDst")
                     .agg(F.sum("weight").alias("weight"))
                     .selectExpr("cSrc as src", "cDst as dst", "weight")
-                    .checkpoint()
-                )
+                ).checkpoint()
+
+            prev_p2.unpersist()
             _pass += 1
 
         # Return final dataframe with sorted columns
@@ -298,17 +310,21 @@ class LouvainCommunities(BaseClass):
         """
 
         # Get id, community and weighted degree
-        ret = partition.join(
-            # Unite sources and destinations to avoid double join
-            other=(
-                edges.selectExpr("src as id", "weight")
-                .unionByName(edges.selectExpr("dst as id", "weight"))
-                .groupBy("id")
-                .agg(F.sum("weight").alias("degree"))
-            ),
-            on="id",
-            how="inner",
-        ).select("id", "c", "degree")
+        ret = (
+            partition.join(
+                # Unite sources and destinations to avoid double join
+                other=(
+                    edges.selectExpr("src as id", "weight")
+                    .unionByName(edges.selectExpr("dst as id", "weight"))
+                    .groupBy("id")
+                    .agg(F.sum("weight").alias("degree"))
+                ),
+                on="id",
+                how="inner",
+            )
+            .select("id", "c", "degree")
+            .checkpoint()
+        )
 
         return ret
 
@@ -363,7 +379,7 @@ class LouvainCommunities(BaseClass):
                 other=partition.selectExpr("id as dst", "c as cDst"),
                 on="dst",
                 how="left",
-            )
+            ).checkpoint()
         )
 
         return ret
