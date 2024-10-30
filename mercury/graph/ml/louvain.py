@@ -239,11 +239,6 @@ class LouvainCommunities(BaseClass):
             if col not in cols:
                 raise ValueError(msg.format(col))
 
-        # Hard-check columns
-        if cols != expected_cols:
-            msg = f"Expecting columns {expected_cols}. Got {cols} instead."
-            raise ValueError(msg)
-
         # Check for duplicates
         dup = (
             df.groupBy(*expected_cols_grouping)
