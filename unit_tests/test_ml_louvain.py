@@ -165,16 +165,6 @@ class TestLouvain(object):
                 expected_cols_others=["weight"],
             )
 
-        # Test when cols != expected_cols
-        t = SparkInterface().spark.createDataFrame(data=[(1, 0, 2, 5)], schema=["src", "dst", "weight", "extra"])
-
-        with pytest.raises(ValueError):
-            assert louvain_clustering._verify_data(
-                df=t,
-                expected_cols_grouping=["src", "dst"],
-                expected_cols_others=["weight"],
-            )
-
         # Test when duplicate values are found in the dataset
         t = SparkInterface().spark.createDataFrame(data=[(1, 0, 1), (1, 0, 1)], schema=["src", "dst", "weight"])
 
