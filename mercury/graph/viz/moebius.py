@@ -11,7 +11,7 @@ if importlib.util.find_spec('IPython.display') is not None:
 
 
 class Moebius:
-    '''
+    """
     Moebius class for visualizing graphs using JavaScript and HTML.
 
     Usage:
@@ -29,9 +29,10 @@ class Moebius:
         front_pat (str):    Path to the frontend resources.
         _int_id_map (dict): A dictionary mapping node IDs to integer IDs.
         name():             The instance name of the object required by the JS callback mechanism.
-    '''
+    """
 
     def __init__(self, G):
+
         if HTML is None:
             raise ImportError('IPython is not installed')
 
@@ -42,36 +43,56 @@ class Moebius:
 
 
     def __str__(self):
+        """
+        Convert the object via str()
+        """
+
         return 'Moebius object %s' % self.name
 
 
     def __getitem__(self, item):
+        """
+        Add support for the [] operator.
+        """
+
         return self._get_adjacent_nodes_moebius(item)
 
 
     @property
     def name(self):
-        ''' Get the instance name of the object which is required by the JS callback mechanism. '''
+        """
+        Get the instance name of the object which is required by the JS callback mechanism.
+        """
+
         return self._get_instance_name()
 
 
     def JS(self, s):
-        ''' Syntactic sugar for display(Javascript()) '''
+        """
+        Syntactic sugar for display(Javascript())
+        """
+
         display(Javascript(s))
 
 
     def FJS(self, fn):
-        ''' Syntactic sugar for display(Javascript(filename = fn)) '''
+        """
+        Syntactic sugar for display(Javascript(filename = fn))
+        """
+
         display(Javascript(filename = fn))
 
 
     def FHT(self, fn):
-        ''' Syntactic sugar for display(HTML(filename = fn)) '''
+        """
+        Syntactic sugar for display(HTML(filename = fn))
+        """
+
         display(HTML(filename = fn))
 
 
     def edge_config(self, label = None, size = None, size_range = None, size_scale = 'linear', color_palette = None):
-        '''
+        """
         Create an edge configuration dictionary for show() in an understandable way.
 
         Args:
@@ -87,7 +108,8 @@ class Moebius:
 
         Returns:
             The edge configuration dictionary
-        '''
+        """
+
         config = {}
 
         if color_palette is not None:
@@ -115,7 +137,7 @@ class Moebius:
 
 
     def node_config(self, label = None, category = None, colors = None, size = None, range = None, scale = 'linear'):
-        '''
+        """
         Create a node configuration dictionary for show() in an understandable way.
 
         Args:
@@ -138,7 +160,8 @@ class Moebius:
 
         Returns:
             The node configuration dictionary
-        '''
+        """
+
         config = {}
 
         if label is not None:
@@ -169,7 +192,7 @@ class Moebius:
 
 
     def show(self, initial_id = None, initial_depth = 1, node_config = None, edge_config = None):
-        '''
+        """
         Start the interactive graph visualization in a Jupyter notebook.
 
         Args:
@@ -177,9 +200,10 @@ class Moebius:
             initial_depth (int): The initial depth of the graph (starting with `initial_id` as 0) to be shown.
             node_config (dict): A node configuration dictionary created by `node_config()`.
             edge_config (dict): An edge configuration dictionary created by `edge_config()`.
-        '''
+        """
+
         if initial_id is None:
-            initial_id = self._int_id_map.keys()[0]
+            initial_id = next(iter(self._int_id_map))
 
         initial_json = self._get_adjacent_nodes_moebius(initial_id, depth = initial_depth)
 
@@ -193,26 +217,25 @@ class Moebius:
 
 
     def _get_instance_name(self):
-        '''
+        """
         Get the instance name of the object
-        '''
+        """
+
         ll = [k for k, v in globals().items() if v is self]
         if ll:
             return ll[0]
 
         main = importlib.import_module('__main__')
-        ll = [k for k, v in vars(main).items() if v is self]
+        ll = [k for k, v in vars(main).items() if v is self and k != '_']
         if ll:
             return ll[0]
 
         frame = inspect.currentframe()
-        ll = [k for k, v in frame.f_back.f_locals.items()
-              if v is self and k != 'self']
+        ll = [k for k, v in frame.f_back.f_locals.items() if v is self and k != 'self']
         if ll:
             return ll[0]
 
-        ll = [k for k, v in frame.f_back.f_back.f_locals.items()
-              if v is self and k != 'self']
+        ll = [k for k, v in frame.f_back.f_back.f_locals.items() if v is self and k != 'self']
         if ll:
             return ll[0]
 
@@ -220,27 +243,28 @@ class Moebius:
 
 
     def _load_moebius_js(self, initial_json, instance_name, node_config, edge_config):
-        '''
+        """
         Load the Moebius javascript library and call the function to draw the graph
-        '''
+        """
+
         self.JS('require.config({paths: {d3: \'https://d3js.org/d3.v4.min\'}});')
         self.FJS(self.front_pat + '/moebius.js')
         self.FHT(self.front_pat + '/moebius.svg.html')
         self.FHT(self.front_pat + '/moebius.css.html')
 
-        javascript_moebius_call = '''
+        javascript_moebius_call = """
             (function(element) {
                 require(['moebius'], function(moebius) {
                     moebius(%s, '%s', %s, %s);
                 });
             })(element);
-        ''' % (initial_json, instance_name, node_config, edge_config)
+        """ % (initial_json, instance_name, node_config, edge_config)
 
         self.JS(javascript_moebius_call)
 
 
     def _get_adjacent_nodes_moebius(self, node_id, limit = 20, depth = 1):
-        '''
+        """
         This is the callback function used to interact with the Moebius JS library. Each time you deploy a node in the graph, this
         function is called to get the adjacent nodes and edges.
 
@@ -266,7 +290,7 @@ class Moebius:
 
         Returns:
             A JSON string with the adjacent nodes and edges.
-        '''
+        """
 
         if self.use_spark:
             nodes_df, edges_df = self._get_one_level_subgraph_graphframes(node_id)
@@ -277,12 +301,42 @@ class Moebius:
             N = len(nodes_df)
 
         d = 1
+        expanded = set(node_id)
 
         while N < limit and d < depth:
-            pass
+            if self.use_spark:
+                next = set(nodes_df.select('id').rdd.flatMap(lambda x: x).collect())
+                for id in next:
+                    if id not in expanded:
+                        expanded.add(id)
+
+                        next_nodes, next_edges = self._get_one_level_subgraph_graphframes(id)
+                        nodes_df = nodes_df.union(next_nodes).distinct()
+                        edges_df = edges_df.union(next_edges).distinct()
+
+                        N = nodes_df.count()
+                        if N >= limit:
+                            break
+            else:
+                next = set(nodes_df.id)
+                for id in next:
+                    if id not in expanded:
+                        expanded.add(id)
+
+                        next_nodes, next_edges = self._get_one_level_subgraph_networkx(id)
+                        nodes_df = pd.concat([nodes_df, next_nodes]).drop_duplicates().reset_index(drop = True)
+                        edges_df = pd.concat([edges_df, next_edges]).drop_duplicates().reset_index(drop = True)
+
+                        N = len(nodes_df)
+                        if N >= limit:
+                            break
+                d += 1
 
         if self.use_spark:
-            pass
+            json_final = {
+                'nodes': json.loads(nodes_df.toPandas().to_json(orient = 'records')),
+                'links': json.loads(edges_df.toPandas().to_json(orient = 'records'))
+            }
 
         else:
             json_final = {
@@ -294,7 +348,7 @@ class Moebius:
 
 
     def _get_one_level_subgraph_graphframes(self, node_id):
-        '''
+        """
         Get the one-level subgraph for a given node ID using GraphFrames.
 
         Args:
@@ -304,7 +358,8 @@ class Moebius:
             tuple: A tuple containing two Spark DataFrames:
                 - nodes_df: DataFrame with columns 'id', 'count', '_int_id', and any other node attributes.
                 - edges_df: DataFrame with the edges connecting the nodes in the subgraph.
-        '''
+        """
+
         sql         = SparkInterface().pyspark.sql
         F           = sql.functions
         IntegerType = sql.types.IntegerType
@@ -336,7 +391,7 @@ class Moebius:
 
 
     def _get_one_level_subgraph_networkx(self, node_id):
-        '''
+        """
         Get the one-level subgraph for a given node ID using Networkx.
 
         Args:
@@ -346,15 +401,18 @@ class Moebius:
             tuple: A tuple containing two Spark DataFrames:
                 - nodes_df: DataFrame with columns 'id', 'count', '_int_id', and any other node attributes.
                 - edges_df: DataFrame with the edges connecting the nodes in the subgraph.
-        '''
+        """
+
         graph = self.G.networkx
 
-        neighbors = list(graph.neighbors(node_id)) + [node_id]
-        subgraph  = graph.subgraph(neighbors)
+        neighbors = set(graph.neighbors(node_id)) | set(graph.predecessors(node_id))
+        neighbors.add(node_id)
+
+        subgraph = graph.subgraph(neighbors)
 
         # Create nodes DataFrame
         nodes_data = []
-        for node in subgraph.nodes(data=True):
+        for node in subgraph.nodes(data = True):
             node_id = node[0]
             attributes = node[1]
             attributes['id'] = node_id
@@ -363,20 +421,34 @@ class Moebius:
             nodes_data.append(attributes)
         nodes_df = pd.DataFrame(nodes_data)
 
+        order = ['id', 'count', '_int_id']
+        for col in nodes_df.columns:
+            if col not in order:
+                order.append(col)
+        nodes_df = nodes_df[order]
+
         # Create edges DataFrame
         edges_data = []
-        for edge in subgraph.edges(data=True):
+        N = len(self._int_id_map)
+        for edge in subgraph.edges(data = True):
             src, dst, attributes = edge
-            attributes['src'] = src
-            attributes['dst'] = dst
+            attributes['source'] = src
+            attributes['target'] = dst
+            attributes['_int_id'] = self._int_id_map[src] + N*(self._int_id_map[dst] + 1)
             edges_data.append(attributes)
         edges_df = pd.DataFrame(edges_data)
+
+        order = ['source', 'target', '_int_id']
+        for col in edges_df.columns:
+            if col not in order:
+                order.append(col)
+        edges_df = edges_df[order]
 
         return nodes_df, edges_df
 
 
     def _pd_to_json_format(self, df):
-        '''
+        """
         A utility to produced the flavor of JSON expected by the JS library from a pandas DataFrame.
 
         Usage:
@@ -393,7 +465,7 @@ class Moebius:
 
         Args:
             df (pd.DataFrame): The DataFrame to be converted to JSON.
-        '''
+        """
 
         df = df.reset_index(drop = True)
 
