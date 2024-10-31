@@ -47,7 +47,7 @@ class Moebius:
         Convert the object via str()
         """
 
-        return 'Moebius object %s' % self.name
+        return 'Moebius(%s)' % str(self.G)
 
 
     def __getitem__(self, item):
@@ -91,72 +91,27 @@ class Moebius:
         display(HTML(filename = fn))
 
 
-    def edge_config(self, label = None, size = None, size_range = None, size_scale = 'linear', color_palette = None):
+    def node_or_edge_config(self, text_is = None, color_is = None, colors = None, size_is = None, size_range = None, size_scale = 'linear'):
         """
-        Create an edge configuration dictionary for show() in an understandable way.
+        Create a `node_config` or `edge_config` configuration dictionary for `show()` in an understandable way.
 
         Args:
-            label (str): The edge attribute to be displayed as text over the edges.
-            size (str): The edge attribute to be displayed as the width of the edges. See the options in the Moebius configuration
-                menu to set limits and scales.
-            size_range (List of two numbers): Combined with label, this parameter controls the values in the variable that
-                correspond to the minimum and maximum displayed width. The values below or equal the first value will be displayed with
-                the base width (that depends on the zoom) and the values above or equal to the second value will be shown with the maximum
-                width.
-            size_scale ('linear', 'power', 'sqrt' or 'log'): Combined with label, the scale used to convert the value in the
-                variable to the displayed width.
-
-        Returns:
-            The edge configuration dictionary
-        """
-
-        config = {}
-
-        if color_palette is not None:
-            config['color_palette'] = color_palette
-        else:
-            config['color_palette'] = {}
-
-        if label is not None:
-            config['label'] = label
-
-        if size is not None:
-            config['sizes_col'] = size
-
-            if size_range is None:
-                config['size_thresholds'] = []
-            else:
-                config['size_thresholds'] = size_range
-
-            if size_scale in ['linear', 'power', 'sqrt', 'log']:
-                config['scale'] = size_scale
-        else:
-             config['size_thresholds'] = []
-
-        return config
-
-
-    def node_config(self, label = None, category = None, colors = None, size = None, range = None, scale = 'linear'):
-        """
-        Create a node configuration dictionary for show() in an understandable way.
-
-        Args:
-            label (str): The node attribute to be displayed as text over the nodes. Use the string `ìd` to draw the node id (regardless
-                of the column having another name) or any valid node attribute name.
-            category (str): A categorical node attribute that can be represented as the node color. This will also enable a legend
-                interface where categories can be individually shown or hidden.
+            text_is (str): The node/edge attribute to be displayed as text. Use the string `ìd` to draw the node id (regardless of the
+                column having another name) or any valid node attribute name.
+            color_is (str): A categorical node/edge attribute that can be represented as a color. This will also enable a legend interface
+                where categories can be individually shown or hidden.
             colors (dict): The colors for each category defined as a dictionary. The keys are possible outcomes of category.
                 The values are html RGB strings. E.g., .draw(category = 'size', colors = {'big' : '#c0a080', 'small' : '#a0c080'})
                 where 'big' and 'small' are possible values of the category 'size'.
-            size (str): The node attribute to be displayed as the size of the nodes. Use the string `ìd` to set the node id (regardless
+            size_is (str): The node attribute to be displayed as the size of the nodes. Use the string `id` to set the node id (regardless
                 of the column having another name) or any valid node attribute name. See the options in the Moebius configuration menu to
                 set minimum, maximum sizes, linear or logarithmic scale, etc.
-            range (List of two numbers): Combined with edge_label, this parameter controls the values in the variable that
+            size_range (List of two numbers): Combined with edge_label, this parameter controls the values in the variable that
                 correspond to the minimum and maximum displayed sizes. The values below or equal the first value will be displayed with the
                 base radius (that depends on the zoom) and the values above or equal to the second value will be shown with the maximum
                 radius.
-            scale ('linear', 'power', 'sqrt' or 'log'): Combined with edge_label, the scale used to convert the value in the variable to
-                the displayed radius.
+            size_scale ('linear', 'power', 'sqrt' or 'log'): Combined with edge_label, the scale used to convert the value in the variable
+                to the displayed radius.
 
         Returns:
             The node configuration dictionary
@@ -164,29 +119,32 @@ class Moebius:
 
         config = {}
 
-        if label is not None:
-            config['label'] = label
+        if text_is is not None:
+            config['label'] = text_is
 
-        if category is not None:
-            config['color'] = category
+        if color_is is not None:
+            config['color'] = color_is
 
         if colors is not None:
             config['color_palette'] = colors
         else:
             config['color_palette'] = {}
 
-        if size is not None:
-            config['sizes_col'] = size
+        if size_is is None:
+            config['size_thresholds'] = []
+        else:
+            config['size'] = size_is
 
-            if range is None:
+            if size_range is None:
                 config['size_thresholds'] = []
             else:
-                config['size_thresholds'] = range
+                assert type(size_range) == list and len(size_range) == 2
+                config['size_thresholds'] = size_range
 
-            if scale in ['linear', 'power', 'sqrt', 'log']:
-                config['scale'] = scale
-        else:
-            config['size_thresholds'] = []
+            if size_scale != 'linear':
+                assert size_scale in {'power', 'sqrt', 'log'}
+
+            config['scale'] = size_scale
 
         return config
 
@@ -208,10 +166,10 @@ class Moebius:
         initial_json = self._get_adjacent_nodes_moebius(initial_id, depth = initial_depth)
 
         if node_config is None:
-            node_config = self.node_config()
+            node_config = self.node_or_edge_config()
 
         if edge_config is None:
-            edge_config = self.edge_config()
+            edge_config = self.node_or_edge_config()
 
         self._load_moebius_js(initial_json, self.name, node_config, edge_config)
 
@@ -239,7 +197,7 @@ class Moebius:
         if ll:
             return ll[0]
 
-        raise NotImplemented('Could not find instance name')
+        raise NotImplementedError('Could not find instance name')
 
 
     def _load_moebius_js(self, initial_json, instance_name, node_config, edge_config):
@@ -301,7 +259,7 @@ class Moebius:
             N = len(nodes_df)
 
         d = 1
-        expanded = set(node_id)
+        expanded = set([node_id])
 
         while N < limit and d < depth:
             if self.use_spark:
