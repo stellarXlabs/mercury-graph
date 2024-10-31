@@ -294,7 +294,7 @@ class SparkNode2Vec(BaseClass):
                 f.col("weight"),
                 f.col("new_rw_norm_cumsum"),
             )
-        ).persist()
+        )
 
         self.gx = GraphFrame(aux_vert, aux_edges)
 
@@ -337,6 +337,7 @@ class SparkNode2Vec(BaseClass):
         for i in range(self.num_epochs):
 
             aux_vert = self._update_state_with_next_step(i)
+            aux_vert = aux_vert.checkpoint()
             self.gx = GraphFrame(aux_vert, self.gx.edges)
 
             if (i + 1) % self.batch_size == 0:
