@@ -84,9 +84,9 @@ class SpectralClustering(BaseClass):
         U = v[:, : self.n_clusters]
         U = asarray(U)
 
-        kmeans = KMeans(n_clusters=self.n_clusters, random_state=self.random_state).fit(
-            U
-        )
+        kmeans = KMeans(
+            n_clusters=self.n_clusters, random_state=self.random_state, n_init="auto"
+        ).fit(U)
 
         self.labels_ = DataFrame({"node_id": gnx.nodes(), "cluster": kmeans.labels_})
 
