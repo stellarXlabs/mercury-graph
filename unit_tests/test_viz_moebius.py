@@ -11,7 +11,6 @@ from mercury.graph.viz import Moebius
 ISSUES:
     - Test (fix) with jupyterlab.
     - Test with colab.
-    - Fix callback for spark.
     - Fix test warning issue on Pinoy
 """
 
@@ -146,8 +145,26 @@ def test_moebius_callbacks():
 
     check_key(jj, 'Frank', ['Alice', 'Bob', 'Charlie', 'Diana', 'Eve', 'Grace'], 7, 10, 3, 5, 5)
 
+    spark_edges = G.edges_as_dataframe()
+    spark_nodes = G.nodes_as_dataframe()
 
-test_moebius()
-test_moebius_callbacks()
+    H = Graph(spark_edges, nodes = spark_nodes)
+    N = Moebius(H)
 
-print('Done.')
+    check_key(N['Alice'],   'Alice',   ['Bob', 'Diana', 'Frank'],     4, 3, 3, 5, 5)
+    check_key(N['Bob'],     'Bob',     ['Alice', 'Charlie', 'Eve'],   4, 3, 3, 5, 5)
+    check_key(N['Charlie'], 'Charlie', ['Bob', 'Grace'],              3, 2, 2, 5, 5)
+    check_key(N['Diana'],   'Diana',   ['Alice', 'Eve', 'Grace'],     4, 3, 3, 5, 5)
+    check_key(N['Eve'],     'Eve',     ['Frank', 'Diana', 'Bob'],     4, 3, 3, 5, 5)
+    check_key(N['Frank'],   'Frank',   ['Eve', 'Grace', 'Alice'],     4, 3, 3, 5, 5)
+    check_key(N['Grace'],   'Grace',   ['Charlie', 'Frank', 'Diana'], 4, 3, 3, 5, 5)
+
+    jj = N._get_adjacent_nodes_moebius('Alice', depth = 7)
+
+    check_key(jj, 'Frank', ['Alice', 'Bob', 'Charlie', 'Diana', 'Eve', 'Grace'], 7, 10, 3, 5, 5)
+
+
+# test_moebius()
+# test_moebius_callbacks()
+
+# print('Done.')
