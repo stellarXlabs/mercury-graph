@@ -315,7 +315,7 @@ class Moebius:
         Returns:
             tuple: A tuple containing two Spark DataFrames:
                 - nodes_df: DataFrame with columns 'id', 'count', '_int_id', and any other node attributes.
-                - edges_df: DataFrame with the edges connecting the nodes in the subgraph.
+                - edges_df: DataFrame with columns 'source', 'target', '_int_id' the edges connecting the nodes in the subgraph.
         """
 
         sql         = SparkInterface().pyspark.sql
@@ -356,9 +356,9 @@ class Moebius:
             node_id (str): The ID of the node for which to get the one-level subgraph.
 
         Returns:
-            tuple: A tuple containing two Spark DataFrames:
+            tuple: A tuple containing two Pandas DataFrames:
                 - nodes_df: DataFrame with columns 'id', 'count', '_int_id', and any other node attributes.
-                - edges_df: DataFrame with the edges connecting the nodes in the subgraph.
+                - edges_df: DataFrame with columns 'source', 'target', '_int_id' the edges connecting the nodes in the subgraph.
         """
 
         graph = self.G.networkx
