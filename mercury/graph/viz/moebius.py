@@ -318,32 +318,52 @@ class Moebius:
                 - edges_df: DataFrame with columns 'source', 'target', '_int_id' the edges connecting the nodes in the subgraph.
         """
 
-        sql         = SparkInterface().pyspark.sql
-        F           = sql.functions
-        IntegerType = sql.types.IntegerType
+        sql      = SparkInterface().pyspark.sql
+        spark    = SparkInterface().spark
+        F        = sql.functions
+        LongType = sql.types.LongType
 
-        graph = self.graphframe
+        graph = self.G.graphframe
 
-        neighbors = graph.bfs(fromExpr = 'id = ' % node_id, toExpr = 'true', maxPathLength = 1)
-        nodes_df  = neighbors.select('from.*').distinct()
+        edges_df = graph.edges.filter((graph.edges.src == node_id) | (graph.edges.dst == node_id))
+
+        N = len(self._int_id_map)
+        int_id_map_broadcast = spark.sparkContext.broadcast(self._int_id_map)
+
+        def edge_int_id(src, dst):
+            int_id_map = int_id_map_broadcast.value
+            return int_id_map[src] + N * (int_id_map[dst] + 1)
+
+        edge_int_id_udf = F.udf(edge_int_id, LongType())
+
+        edges_df = edges_df.withColumn('_int_id', edge_int_id_udf(F.col('src'), F.col('dst')))
+        edges_df = edges_df.withColumnRenamed('src', 'source').withColumnRenamed('dst', 'target')
+
+        order = ['source', 'target', '_int_id']
+        for col in edges_df.columns:
+            if col not in order:
+                order.append(col)
+        edges_df = edges_df.select(order)
+
+        node_ids = edges_df.select('source').union(edges_df.select('target')).distinct()
+        nodes_df = node_ids.join(graph.vertices, node_ids.source == graph.vertices.id, 'inner').select(graph.vertices['*'])
 
         degrees  = graph.degrees
         nodes_df = nodes_df.join(degrees, on = 'id', how = 'left').withColumnRenamed('degree', 'count')
 
-        # Define a local UDF to map id to _int_id using the dictionary
-        def get_int_id(node_id):
-            return self._int_id_map[node_id]
+        def node_int_id(id):
+            int_id_map = int_id_map_broadcast.value
+            return int_id_map[id]
 
-        # Register the UDF
-        get_int_id_udf = F.udf(get_int_id, IntegerType())
+        node_int_id_udf = F.udf(node_int_id, LongType())
 
-        # Add the _int_id column to nodes_df
-        nodes_df = nodes_df.withColumn('_int_id', get_int_id_udf(F.col('id')))
+        nodes_df = nodes_df.withColumn('_int_id', node_int_id_udf(F.col('id')))
 
-        edges_df = graph.edges.filter(
-            (graph.edges.src.isin(nodes_df.select('id').rdd.flatMap(lambda x: x).collect())) &
-            (graph.edges.dst.isin(nodes_df.select('id').rdd.flatMap(lambda x: x).collect()))
-        )
+        order = ['id', 'count', '_int_id']
+        for col in nodes_df.columns:
+            if col not in order:
+                order.append(col)
+        nodes_df = nodes_df.select(order)
 
         return nodes_df, edges_df
 
