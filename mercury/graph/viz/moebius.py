@@ -288,7 +288,8 @@ class Moebius:
                         N = len(nodes_df)
                         if N >= limit:
                             break
-                d += 1
+
+            d += 1
 
         if self.use_spark:
             json_final = {
