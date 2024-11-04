@@ -180,20 +180,18 @@ class Moebius:
         """
 
         ll = [k for k, v in globals().items() if v is self]
-        if ll:
-            return ll[0]
 
-        main = importlib.import_module('__main__')
-        ll = [k for k, v in vars(main).items() if v is self and k != '_']
-        if ll:
-            return ll[0]
+        if not ll:
+            main = importlib.import_module('__main__')
+            ll = [k for k, v in vars(main).items() if v is self and k != '_']
 
-        frame = inspect.currentframe()
-        ll = [k for k, v in frame.f_back.f_locals.items() if v is self and k != 'self']
-        if ll:
-            return ll[0]
+            if not ll:
+                frame = inspect.currentframe()
+                ll = [k for k, v in frame.f_back.f_locals.items() if v is self and k != '_' and k != 'self']
 
-        ll = [k for k, v in frame.f_back.f_back.f_locals.items() if v is self and k != 'self']
+                if not ll:
+                    ll = [k for k, v in frame.f_back.f_back.f_locals.items() if v is self and k != '_' and k != 'self']
+
         if ll:
             return ll[0]
 
@@ -306,7 +304,7 @@ class Moebius:
         return json.dumps(json_final)
 
 
-    def _get_one_level_subgraph_graphframes(self, node_id):
+    def _get_one_level_subgraph_graphframes(self, node_id, _testing = False):
         """
         Get the one-level subgraph for a given node ID using GraphFrames.
 
@@ -333,7 +331,7 @@ class Moebius:
 
         def edge_int_id(src, dst):
             int_id_map = int_id_map_broadcast.value
-            return int_id_map[src] + N * (int_id_map[dst] + 1)
+            return int_id_map[src] + N*(int_id_map[dst] + 1)
 
         edge_int_id_udf = F.udf(edge_int_id, LongType())
 
@@ -355,6 +353,11 @@ class Moebius:
         def node_int_id(id):
             int_id_map = int_id_map_broadcast.value
             return int_id_map[id]
+
+        if _testing:
+            key, val = next(iter(self._int_id_map.items()))
+            assert node_int_id(key) == val
+            assert edge_int_id(key, key) == N*val + N + val
 
         node_int_id_udf = F.udf(node_int_id, LongType())
 

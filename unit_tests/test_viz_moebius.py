@@ -1,10 +1,9 @@
 import copy, json, os, pytest
 
 import pandas as pd
-import networkx as nx
 
 from mercury.graph.core.graph import Graph
-from mercury.graph.viz import Moebius
+import mercury.graph.viz as viz
 
 
 """
@@ -35,7 +34,24 @@ def toy_datasets():
 def test_moebius():
     edges, nodes = toy_datasets()
     G = Graph(edges, nodes = nodes)
-    M = Moebius(G)
+    M = viz.Moebius(G)
+
+    M.JS(';')
+    with pytest.raises(FileNotFoundError):
+        M.FJS('_not_here.js')
+    with pytest.raises(FileNotFoundError):
+        M.FHT('_not_here.html')
+
+    bak_HTML = viz.moebius.HTML
+    viz.moebius.HTML = None
+    with pytest.raises(ImportError):
+        X = viz.Moebius(G)
+
+    viz.moebius.HTML = bak_HTML
+
+    _ = viz.Moebius(G)
+    with pytest.raises(NotImplementedError):
+        _._get_instance_name()
 
     assert M.G is G
     assert M.use_spark is False
@@ -86,6 +102,8 @@ def test_moebius():
     with pytest.raises(NotImplementedError):
         M.show()
 
+    M._load_moebius_js('', 'M', '', '')
+
 
 def check_key(jj, ky, neighbors, n_nodes, n_edges, degree, dim_n, dim_e):
     oo = json.loads(jj)
@@ -129,7 +147,7 @@ def check_key(jj, ky, neighbors, n_nodes, n_edges, degree, dim_n, dim_e):
 def test_moebius_callbacks():
     edges, nodes = toy_datasets()
     G = Graph(edges, nodes = nodes)
-    M = Moebius(G)
+    M = viz.Moebius(G)
 
     # 'src':    ['Alice', 'Bob',     'Alice', 'Eve',   'Diana', 'Charlie', 'Frank', 'Bob', 'Grace', 'Alice']
     # 'dst':    ['Bob',   'Charlie', 'Diana', 'Frank', 'Eve',   'Grace',   'Grace', 'Eve', 'Diana', 'Frank']
@@ -147,9 +165,15 @@ def test_moebius_callbacks():
     check_key(M['Frank'],   'Frank',   ['Eve', 'Grace', 'Alice'],     4, 3, 3, 5, 5)
     check_key(M['Grace'],   'Grace',   ['Charlie', 'Frank', 'Diana'], 4, 3, 3, 5, 5)
 
-    jj = M._get_adjacent_nodes_moebius('Alice', depth = 7)
+    jj = M._get_adjacent_nodes_moebius('Alice', depth = 4)
 
     check_key(jj, 'Frank', ['Alice', 'Bob', 'Charlie', 'Diana', 'Eve', 'Grace'], 7, 10, 3, 5, 5)
+
+    kk = M._get_adjacent_nodes_moebius('Alice', limit = 5, depth = 2)
+    oo = json.loads(kk)
+    assert type(oo) == dict and len(oo) == 2
+    kk_nodes = oo['nodes']
+    assert type(kk_nodes) == list and len(kk_nodes) < 7
 
     pd = M.G.nodes_as_pandas()
     assert pd.shape == nodes.shape
@@ -160,7 +184,7 @@ def test_moebius_callbacks():
     spark_nodes = G.nodes_as_dataframe()
 
     H = Graph(spark_edges, nodes = spark_nodes)
-    N = Moebius(H)
+    N = viz.Moebius(H)
 
     check_key(N['Alice'],   'Alice',   ['Bob', 'Diana', 'Frank'],     4, 3, 3, 5, 5)
 
@@ -181,9 +205,17 @@ def test_moebius_callbacks():
     df = M.G.edges_as_dataframe()
     assert (df.count(), len(df.columns)) == edges.shape
 
-    jj = N._get_adjacent_nodes_moebius('Alice', depth = 7)
+    jj = N._get_adjacent_nodes_moebius('Alice', depth = 4)
 
     check_key(jj, 'Frank', ['Alice', 'Bob', 'Charlie', 'Diana', 'Eve', 'Grace'], 7, 10, 3, 5, 5)
+
+    kk = N._get_adjacent_nodes_moebius('Alice', limit = 5, depth = 2)
+    oo = json.loads(kk)
+    assert type(oo) == dict and len(oo) == 2
+    kk_nodes = oo['nodes']
+    assert type(kk_nodes) == list and len(kk_nodes) < 7
+
+    N._get_one_level_subgraph_graphframes('Alice', _testing = True)
 
 
 # test_moebius()
