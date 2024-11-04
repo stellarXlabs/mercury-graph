@@ -372,7 +372,7 @@ class Moebius:
         nodes_data = []
         for node in subgraph.nodes(data = True):
             node_id = node[0]
-            attributes = node[1]
+            attributes = node[1].copy()
             attributes['id'] = node_id
             attributes['count'] = graph.degree[node_id]
             attributes['_int_id'] = self._int_id_map[node_id]
@@ -390,6 +390,7 @@ class Moebius:
         N = len(self._int_id_map)
         for edge in subgraph.edges(data = True):
             src, dst, attributes = edge
+            attributes = attributes.copy()
             attributes['source'] = src
             attributes['target'] = dst
             attributes['_int_id'] = self._int_id_map[src] + N*(self._int_id_map[dst] + 1)

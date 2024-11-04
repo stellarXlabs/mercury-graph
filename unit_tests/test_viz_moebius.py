@@ -134,6 +134,12 @@ def test_moebius_callbacks():
     # 'src':    ['Alice', 'Bob',     'Alice', 'Eve',   'Diana', 'Charlie', 'Frank', 'Bob', 'Grace', 'Alice']
     # 'dst':    ['Bob',   'Charlie', 'Diana', 'Frank', 'Eve',   'Grace',   'Grace', 'Eve', 'Diana', 'Frank']
     check_key(M['Alice'],   'Alice',   ['Bob', 'Diana', 'Frank'],     4, 3, 3, 5, 5)
+
+    pd = M.G.nodes_as_pandas()
+    assert pd.shape == nodes.shape
+    pd = M.G.edges_as_pandas()
+    assert pd.shape == edges.shape
+
     check_key(M['Bob'],     'Bob',     ['Alice', 'Charlie', 'Eve'],   4, 3, 3, 5, 5)
     check_key(M['Charlie'], 'Charlie', ['Bob', 'Grace'],              3, 2, 2, 5, 5)
     check_key(M['Diana'],   'Diana',   ['Alice', 'Eve', 'Grace'],     4, 3, 3, 5, 5)
@@ -145,6 +151,11 @@ def test_moebius_callbacks():
 
     check_key(jj, 'Frank', ['Alice', 'Bob', 'Charlie', 'Diana', 'Eve', 'Grace'], 7, 10, 3, 5, 5)
 
+    pd = M.G.nodes_as_pandas()
+    assert pd.shape == nodes.shape
+    pd = M.G.edges_as_pandas()
+    assert pd.shape == edges.shape
+
     spark_edges = G.edges_as_dataframe()
     spark_nodes = G.nodes_as_dataframe()
 
@@ -152,12 +163,23 @@ def test_moebius_callbacks():
     N = Moebius(H)
 
     check_key(N['Alice'],   'Alice',   ['Bob', 'Diana', 'Frank'],     4, 3, 3, 5, 5)
+
+    df = M.G.nodes_as_dataframe()
+    assert (df.count(), len(df.columns)) == nodes.shape
+    df = M.G.edges_as_dataframe()
+    assert (df.count(), len(df.columns)) == edges.shape
+
     check_key(N['Bob'],     'Bob',     ['Alice', 'Charlie', 'Eve'],   4, 3, 3, 5, 5)
     check_key(N['Charlie'], 'Charlie', ['Bob', 'Grace'],              3, 2, 2, 5, 5)
     check_key(N['Diana'],   'Diana',   ['Alice', 'Eve', 'Grace'],     4, 3, 3, 5, 5)
     check_key(N['Eve'],     'Eve',     ['Frank', 'Diana', 'Bob'],     4, 3, 3, 5, 5)
     check_key(N['Frank'],   'Frank',   ['Eve', 'Grace', 'Alice'],     4, 3, 3, 5, 5)
     check_key(N['Grace'],   'Grace',   ['Charlie', 'Frank', 'Diana'], 4, 3, 3, 5, 5)
+
+    df = M.G.nodes_as_dataframe()
+    assert (df.count(), len(df.columns)) == nodes.shape
+    df = M.G.edges_as_dataframe()
+    assert (df.count(), len(df.columns)) == edges.shape
 
     jj = N._get_adjacent_nodes_moebius('Alice', depth = 7)
 
