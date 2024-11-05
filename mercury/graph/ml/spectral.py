@@ -1,5 +1,5 @@
 from mercury.graph.core import Graph
-from mercury.graph.graphml.base import BaseClass
+from mercury.graph.core.base import BaseClass
 from pandas import DataFrame
 from networkx import normalized_laplacian_matrix
 from networkx.algorithms.community import modularity as nx_modularity
@@ -63,6 +63,8 @@ class SpectralClustering(BaseClass):
         else:
             self._fit_spark(graph)
 
+        return self
+
     def _fit_networkx(self, graph: Graph):
         """
         Spectral clustering but using networkx (local mode implementation)
@@ -82,16 +84,14 @@ class SpectralClustering(BaseClass):
         U = v[:, : self.n_clusters]
         U = asarray(U)
 
-        kmeans = KMeans(n_clusters=self.n_clusters, random_state=self.random_state).fit(
-            U
-        )
+        kmeans = KMeans(
+            n_clusters=self.n_clusters, random_state=self.random_state, n_init="auto"
+        ).fit(U)
 
         self.labels_ = DataFrame({"node_id": gnx.nodes(), "cluster": kmeans.labels_})
 
         cluster_nodes = self.labels_.groupby("cluster")["node_id"].apply(list)
         self.modularity_ = nx_modularity(gnx, cluster_nodes)
-
-        return self
 
     def _fit_spark(self, graph: Graph):
         """
@@ -146,8 +146,6 @@ class SpectralClustering(BaseClass):
         self.modularity_ = self._spark_modularity(
             graph_frames_graph.edges, graph_frames_graph.degrees
         )
-
-        return self
 
     def _spark_modularity(self, edges, degrees, resolution=1):
         """Computes modularity using the same approximation as networkx:

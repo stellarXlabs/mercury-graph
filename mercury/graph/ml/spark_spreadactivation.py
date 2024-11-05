@@ -7,7 +7,7 @@ from mercury.graph.core.spark_interface import (
     pyspark_installed,
     graphframes_installed,
 )
-from mercury.graph.graphml.base import BaseClass
+from mercury.graph.core.base import BaseClass
 
 if pyspark_installed:
     import pyspark
@@ -76,7 +76,7 @@ class SparkSpreadingActivation(BaseClass):
     def fit(
         self,
         g: Graph,
-        seed_nodes: Union[List, "pyspark.sql.DataFrame"] = None,
+        seed_nodes: Union[List, "pyspark.sql.DataFrame"],
     ):
         """
         Perform all iterations of spread_activation
@@ -99,13 +99,14 @@ class SparkSpreadingActivation(BaseClass):
         for _ in range(0, self.steps, 1):
             g = self._spread_activation_step(
                 g,
-                self.attribute,
-                self.spreading_factor,
-                self.transfer_function,
             )
 
-        # graph with updated attributes
+        # Graph with updated attributes
         self.fitted_graph_ = g
+        # Influences as DataFrame
+        self.influences_ = self.fitted_graph_.nodes_as_dataframe().select(
+            "id", "influence"
+        )
 
         return self
 
@@ -192,9 +193,7 @@ class SparkSpreadingActivation(BaseClass):
         # Update graph
         return Graph(GraphFrame(new_v, g_edges))
 
-    def _spread_activation_step(
-        self, g: Graph, attribute, spreading_factor, transfer_function
-    ):
+    def _spread_activation_step(self, g: Graph):
         """
         One step in the spread activation model.
         Args:
@@ -208,41 +207,49 @@ class SparkSpreadingActivation(BaseClass):
         """
 
         # Pass influence/message to neighboring nodes (weighted/unweighted option)
-        if transfer_function == "unweighted":
-            msg_to_src = (AM.src[attribute] / AM.src["outDegree"]) * (
-                1 - spreading_factor
+        if self.transfer_function == "unweighted":
+            msg_to_src = (AM.src[self.attribute] / AM.src["outDegree"]) * (
+                1 - self.spreading_factor
             )
             msg_to_dst = f.when(
                 AM.dst["outDegree"] != 0,
-                ((AM.src[attribute] / AM.src["outDegree"]) * spreading_factor),
+                (
+                    (AM.src[self.attribute] / AM.src["outDegree"])
+                    * self.spreading_factor
+                ),
             ).otherwise(
-                ((1 / AM.dst["inDegree"]) * AM.dst[attribute])
-                + ((AM.src[attribute] / AM.src["outDegree"]) * spreading_factor)
+                ((1 / AM.dst["inDegree"]) * AM.dst[self.attribute])
+                + (
+                    (AM.src[self.attribute] / AM.src["outDegree"])
+                    * self.spreading_factor
+                )
             )
 
-        elif transfer_function == "weighted":
+        elif self.transfer_function == "weighted":
             weight = AM.edge["weight"] / AM.src["w_outDegree"]
-            msg_to_src = (AM.src[attribute] / AM.src["outDegree"]) * (
-                1 - spreading_factor
+            msg_to_src = (AM.src[self.attribute] / AM.src["outDegree"]) * (
+                1 - self.spreading_factor
             )
             msg_to_dst = f.when(
                 AM.dst["outDegree"] != 0,
-                ((AM.src[attribute]) * (spreading_factor * weight)),
+                ((AM.src[self.attribute]) * (self.spreading_factor * weight)),
             ).otherwise(
-                ((1 / AM.dst["inDegree"]) * AM.dst[attribute])
-                + ((AM.src[attribute]) * (spreading_factor * weight))
+                ((1 / AM.dst["inDegree"]) * AM.dst[self.attribute])
+                + ((AM.src[self.attribute]) * (self.spreading_factor * weight))
             )
 
         # Aggregate messages
         agg = g.graphframe.aggregateMessages(
-            f.sum(AM.msg).alias(attribute), sendToSrc=msg_to_src, sendToDst=msg_to_dst
+            f.sum(AM.msg).alias(self.attribute),
+            sendToSrc=msg_to_src,
+            sendToDst=msg_to_dst,
         )
 
         # Create a new cached copy of the dataFrame to get new calculated attribute
         cached_new_vertices = AM.getCachedDataFrame(agg)
 
         if self.influenced_by:
-            tojoin = g.graphframe.vertices.select(
+            to_join = g.graphframe.vertices.select(
                 "id",
                 "inDegree",
                 "outDegree",
@@ -251,10 +258,10 @@ class SparkSpreadingActivation(BaseClass):
                 "influenced_by",
             )
         else:
-            tojoin = g.graphframe.vertices.select(
+            to_join = g.graphframe.vertices.select(
                 "id", "inDegree", "outDegree", "w_inDegree", "w_outDegree"
             )
-        new_cached_new_vertices = cached_new_vertices.join(tojoin, "id", "left_outer")
+        new_cached_new_vertices = cached_new_vertices.join(to_join, "id", "left_outer")
         new_cached_new_vertices = new_cached_new_vertices.na.fill(0)
 
         # If influenced_by flag is set, compute new seed nodes influencing

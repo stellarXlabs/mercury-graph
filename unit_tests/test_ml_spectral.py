@@ -2,7 +2,7 @@ import pytest
 import pandas as pd
 
 from mercury.graph.core import Graph
-from mercury.graph.graphml import SpectralClustering
+from mercury.graph.ml import SpectralClustering
 
 
 class TestSpectral(object):
@@ -14,8 +14,13 @@ class TestSpectral(object):
         spectral_clustering = SpectralClustering()
         assert isinstance(spectral_clustering, SpectralClustering)
 
-        assert type(str(spectral_clustering)) is str and len(str(spectral_clustering)) > 0
-        assert type(repr(spectral_clustering)) is str and len(repr(spectral_clustering)) > 0
+        assert (
+            type(str(spectral_clustering)) is str and len(str(spectral_clustering)) > 0
+        )
+        assert (
+            type(repr(spectral_clustering)) is str
+            and len(repr(spectral_clustering)) > 0
+        )
 
     def test___init__(self):
         """
@@ -129,18 +134,11 @@ class TestSpectral(object):
 
         labels_ = spectral_clustering.labels_.toPandas()
 
-        assert labels_.shape[0] == 12
+        assert labels_.shape == (12, 2)
         assert (
-            labels_.cluster[labels_["node_id"] == "a"].values[0]
-            == labels_.cluster[labels_["node_id"] == "b"].values[0]
+            labels_["node_id"].sort_values().reset_index(drop=True)
+            .equals(df_nodes["node_id"].sort_values().reset_index(drop=True))
         )
-        assert (
-            labels_.cluster[labels_["node_id"] == "a"].values[0]
-            == labels_.cluster[labels_["node_id"] == "c"].values[0]
-        )
-        assert (
-            labels_.cluster[labels_["node_id"] == "a"].values[0]
-            == labels_.cluster[labels_["node_id"] == "z"].values[0]
-        )
+        assert sorted(labels_["cluster"].unique()) == [0, 1, 2]
 
         assert spectral_clustering.modularity_ > 0

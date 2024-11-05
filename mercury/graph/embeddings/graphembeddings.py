@@ -2,9 +2,11 @@ import bz2
 import pickle
 
 import numpy as np
+import pandas as pd
 import networkx as nx
 
 from mercury.graph.core import Graph, njit, graph_i4
+from mercury.graph.core.base import BaseClass
 from mercury.graph.embeddings import Embeddings
 
 
@@ -63,7 +65,7 @@ def _random_walks(r_ini, r_len, r_sum, r_col, r_wgt, TotW, n_jmp, max_jpe):
     return (convrge, diverge)
 
 
-class GraphEmbedding:
+class GraphEmbedding(BaseClass):
     """
     Create an embedding mapping the nodes of a graph.
 
@@ -93,15 +95,21 @@ class GraphEmbedding:
         load_file=None,
     ):
         """GraphEmbedding class constructor"""
-        if load_file is not None:
-            self._load(load_file)
-            return
+        if load_file is None and (dimension is None or n_jumps is None):
+            raise ValueError(
+                "Parameters dimension and n_jumps are required when load_file is None"
+            )
 
         self.dimension = dimension
         self.n_jumps = n_jumps
         self.max_per_epoch = max_per_epoch
         self.learn_step = learn_step
         self.bidirectional = bidirectional
+        self.load_file = load_file
+
+        if self.load_file is not None:
+            self._load(self.load_file)
+            return
 
     def __getitem__(self, arg):
         """
@@ -218,6 +226,7 @@ class GraphEmbedding:
 
         Returns:
             (list): list of k most similar nodes and list of similarities of the most similar nodes
+            (DataFrame): A list of k most similar nodes as a `pd.DataFrame[word: string, similarity: double]`
         """
         node_index = self.node_ids.index(node_id)
 
@@ -230,7 +239,7 @@ class GraphEmbedding:
         else:
             nodes = list(ordered_indices)
 
-        return nodes, ordered_similarities
+        return pd.DataFrame({"word": nodes, "similarity": ordered_similarities})
 
     def save(self, file_name, save_embedding=False):
         """

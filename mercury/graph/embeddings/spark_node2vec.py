@@ -1,9 +1,13 @@
 import logging
 
 from mercury.graph.core import Graph
-from mercury.graph.graphml.base import BaseClass
+from mercury.graph.core.base import BaseClass
 
-from mercury.graph.core.spark_interface import SparkInterface, pyspark_installed, graphframes_installed
+from mercury.graph.core.spark_interface import (
+    SparkInterface,
+    pyspark_installed,
+    graphframes_installed,
+)
 
 if pyspark_installed:
     import pyspark.sql.functions as f
@@ -134,7 +138,7 @@ class SparkNode2Vec(BaseClass):
 
         if not self.use_cached_rw:
             paths = (
-                self._run_rw(G, self.sampling_ratio, self.num_epochs, self.batch_size)
+                self._run_rw(G)
                 .withColumn("size", f.size("random_walks"))
                 .where(f.col("size") > 1)
                 .drop("size")
@@ -150,9 +154,7 @@ class SparkNode2Vec(BaseClass):
             if self.num_paths_per_node > 1:
                 for block_id in range(1, self.num_paths_per_node):
                     new_paths = (
-                        self._run_rw(
-                            G, self.sampling_ratio, self.num_epochs, self.batch_size
-                        )
+                        self._run_rw(G)
                         .withColumn("size", f.size("random_walks"))
                         .where(f.col("size") > 1)
                         .drop("size")
@@ -172,7 +174,8 @@ class SparkNode2Vec(BaseClass):
             self.paths_ = paths.persist()
         else:
             self.paths_ = (
-                SparkInterface().read_parquet(self.path_cache)
+                SparkInterface()
+                .read_parquet(self.path_cache)
                 .drop("block")
                 .repartition(self.n_partitions_cache)
                 .persist()
@@ -254,7 +257,7 @@ class SparkNode2Vec(BaseClass):
 
         self.node2vec_ = Word2VecModel.load(file_name)
 
-    def _start_rw(self, G: Graph, sampling_ratio):
+    def _start_rw(self, G: Graph):
         aux_vert = (
             G.graphframe.vertices.groupBy(f.col("id"))
             .agg(f.collect_list(f.col("id")).alias("tmp_rw_aux_acc_path"))
@@ -262,7 +265,7 @@ class SparkNode2Vec(BaseClass):
             .withColumn(
                 "new_rw_acc_path",
                 f.when(
-                    f.col("tmp_rw_init_p") <= sampling_ratio,
+                    f.col("tmp_rw_init_p") <= self.sampling_ratio,
                     f.col("tmp_rw_aux_acc_path"),
                 ).otherwise(f.lit(None)),
             )
@@ -291,7 +294,7 @@ class SparkNode2Vec(BaseClass):
                 f.col("weight"),
                 f.col("new_rw_norm_cumsum"),
             )
-        ).persist()
+        )
 
         self.gx = GraphFrame(aux_vert, aux_edges)
 
@@ -328,15 +331,16 @@ class SparkNode2Vec(BaseClass):
 
         return selected_next_step
 
-    def _run_rw(self, G: Graph, sampling_ratio, num_epochs, batch_size):
-        self._start_rw(G, sampling_ratio)
+    def _run_rw(self, G: Graph):
+        self._start_rw(G)
 
-        for i in range(num_epochs):
+        for i in range(self.num_epochs):
 
             aux_vert = self._update_state_with_next_step(i)
+            aux_vert = aux_vert.checkpoint()
             self.gx = GraphFrame(aux_vert, self.gx.edges)
 
-            if (i + 1) % batch_size == 0:
+            if (i + 1) % self.batch_size == 0:
                 old_aux_vert = aux_vert
                 aux_vert = AggregateMessages.getCachedDataFrame(aux_vert)
                 old_aux_vert.unpersist()

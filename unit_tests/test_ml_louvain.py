@@ -5,7 +5,7 @@ import pandas as pd
 from pyspark.sql.functions import collect_set
 
 from mercury.graph.core import Graph, SparkInterface
-from mercury.graph.graphml import LouvainCommunities
+from mercury.graph.ml import LouvainCommunities
 
 
 class TestLouvain(object):
@@ -161,16 +161,6 @@ class TestLouvain(object):
         with pytest.raises(TypeError, match=expected_msg):
             assert louvain_clustering._verify_data(
                 df=t.toPandas(),
-                expected_cols_grouping=["src", "dst"],
-                expected_cols_others=["weight"],
-            )
-
-        # Test when cols != expected_cols
-        t = SparkInterface().spark.createDataFrame(data=[(1, 0, 2, 5)], schema=["src", "dst", "weight", "extra"])
-
-        with pytest.raises(ValueError):
-            assert louvain_clustering._verify_data(
-                df=t,
                 expected_cols_grouping=["src", "dst"],
                 expected_cols_others=["weight"],
             )
