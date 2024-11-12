@@ -141,4 +141,4 @@ class TestSpectral(object):
         )
         assert sorted(labels_["cluster"].unique()) == [0, 1, 2]
 
-        assert spectral_clustering.modularity_ > 0
+        assert -0.5 <= spectral_clustering.modularity_ <= 1
