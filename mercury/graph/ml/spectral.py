@@ -4,7 +4,7 @@ from pandas import DataFrame
 from networkx import normalized_laplacian_matrix
 from networkx.algorithms.community import modularity as nx_modularity
 from sklearn.cluster import KMeans
-from numpy.linalg import eig
+from numpy.linalg import eigh
 from numpy import asarray
 import numpy as np
 
@@ -77,9 +77,12 @@ class SpectralClustering(BaseClass):
         """
         gnx = graph.networkx.to_undirected()
 
-        L = normalized_laplacian_matrix(gnx)
+        L = normalized_laplacian_matrix(gnx).todense()
 
-        w, v = eig(L.todense())
+        if not np.allclose(L, L.T):
+            raise ValueError("Normalized Laplacian matrix of the undirected graph should be symmetric")
+
+        w, v = eigh(L)
 
         U = v[:, : self.n_clusters]
         U = asarray(U)
