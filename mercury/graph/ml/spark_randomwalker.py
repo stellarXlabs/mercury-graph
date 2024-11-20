@@ -56,7 +56,7 @@ class SparkRandomWalker(BaseClass):
             source_id (int/str/list): the source vertex or list for vertices to start the random walks.
 
         Returns:
-            self (object): Fitted self (or raises an error)
+            (self): Fitted self (or raises an error)
 
         Attribute `paths_` contains a Spark Dataframe with a columns `random_walks` containing an array of the elements
         of the path walked and another column with the corresponding weights. The weights represent the probability of

@@ -100,10 +100,10 @@ class LouvainCommunities(BaseClass):
     def fit(self, g: Graph):
         """
         Args:
-            graph (Graph): A mercury graph structure.
+            g (Graph): A mercury graph structure.
 
         Returns:
-            self (object): Fitted self (or raises an error).
+            (self): Fitted self (or raises an error).
         """
         edges = g.graphframe.edges
 
@@ -342,7 +342,7 @@ class LouvainCommunities(BaseClass):
                 node's ID) and `c` (indicating each node's assigned community).
 
         Returns:
-            edges (pyspark.sql.dataframe.DataFrame):
+            (pyspark.sql.dataframe.DataFrame):
                 This function returns `edges` with two additional columns: the community
                 that the source node belongs to (`cSrc`) and the community that the
                 destination node belongs to (`cDst`).

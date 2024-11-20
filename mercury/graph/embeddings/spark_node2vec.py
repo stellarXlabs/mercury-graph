@@ -118,11 +118,11 @@ class SparkNode2Vec(BaseClass):
         Train the embedding by doing random walks.
 
         Args:
-            G (mercury.graph Graph asset): A `mercury.graph` Graph object. The embedding will be created so that each row in the embedding maps
-            a node ID in G. (This parameter will be ignored when `load_file` is used.)
+            G (mercury.graph.core.Graph): A `mercury.graph` Graph object. The embedding will be created so that each row in the embedding maps
+                a node ID in G. (This parameter will be ignored when `load_file` is used.)
 
         Returns:
-            self (object): Fitted self (or raises an error)
+            (self): Fitted self (or raises an error)
 
         Random walk paths are available in attribute `paths_`.
         Spark's Word2Vec model fitted on paths_ is available in attribute `node2vec_` through method `model()`.

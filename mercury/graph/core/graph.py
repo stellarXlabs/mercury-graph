@@ -137,9 +137,10 @@ class Graph:
     - On scikit conventions: https://scikit-learn.org/stable/glossary.html
 
     Args:
-        data: The data to create the graph from. It can be a pandas DataFrame, a networkx Graph, a pyspark DataFrame, or a Graphframe. In
-            case it already contains a graph (networkx or graphframes), the keys and nodes arguments are ignored.
-        keys: A dictionary with keys to specify the columns in the data DataFrame. The keys are:
+        data (pd.DataFrame, nx.Graph or pyspark.sql.DataFrame): The data to create the graph from. 
+            It can be a pandas DataFrame, a networkx Graph, a pyspark DataFrame, or a Graphframe. 
+            In case it already contains a graph (networkx or graphframes), the keys and nodes arguments are ignored.
+        keys (dict): A dictionary with keys to specify the columns in the data DataFrame. The keys are:
             - 'src': The name of the column with the source node.
             - 'dst': The name of the column with the destination node.
             - 'id': The name of the column with the node id.
@@ -151,7 +152,7 @@ class Graph:
             - 'id': 'id'
             - 'weight': 'weight'
             - 'directed': True
-        nodes: A pandas DataFrame or a pyspark DataFrame with the nodes data. (Only when `data` is pandas or pyspark DataFrame and with the
+        nodes (pd.DataFrame): A pandas DataFrame or a pyspark DataFrame with the nodes data. (Only when `data` is pandas or pyspark DataFrame and with the
             same type as `data`) If not given, the nodes are inferred from the edges DataFrame.
     """
     def __init__(self, data = None, keys = None, nodes = None):
@@ -220,7 +221,7 @@ class Graph:
         Returns an iterator over all the nodes in the graph.
 
         Returns:
-            NodeIterator: An iterator that yields each node in the graph.
+            (NodeIterator): An iterator that yields each node in the graph.
         """
         return NodeIterator(self)
 
@@ -231,7 +232,7 @@ class Graph:
         Returns an iterator over the edges in the graph.
 
         Returns:
-            EdgeIterator: An iterator object that allows iterating over the edges in the graph.
+            (EdgeIterator): An iterator object that allows iterating over the edges in the graph.
         """
         return EdgeIterator(self)
 
@@ -244,7 +245,7 @@ class Graph:
         If the graph has not been converted to NetworkX format yet, it will be converted and cached for future use.
 
         Returns:
-            networkx.Graph: The graph representation as a NetworkX graph.
+            (networkx.Graph): The graph representation as a NetworkX graph.
         """
         if self._as_networkx is None:
             self._as_networkx = self._to_networkx()
@@ -260,7 +261,7 @@ class Graph:
         If the graph has not been converted to a GraphFrame yet, it will be converted and cached for future use.
 
         Returns:
-            GraphFrame: The graph represented as a GraphFrame.
+            (GraphFrame): The graph represented as a GraphFrame.
         """
         if self._as_graphframe is None:
             self._as_graphframe = self._to_graphframe()
@@ -276,7 +277,7 @@ class Graph:
         If the graph has not been converted to a DGL graph yet, it will be converted and cached for future use.
 
         Returns:
-            dgl.DGLGraph: The graph represented as a DGL graph.
+            (dgl.DGLGraph): The graph represented as a DGL graph.
         """
         if self._as_dgl is None:
             self._as_dgl = self._to_dgl()
@@ -380,7 +381,7 @@ class Graph:
         Returns the number of nodes in the graph.
 
         Returns:
-            int: The number of nodes in the graph.
+            (int): The number of nodes in the graph.
         """
         return self._number_of_nodes
 
@@ -391,7 +392,7 @@ class Graph:
         Returns the number of edges in the graph.
 
         Returns:
-            int: The number of edges in the graph.
+            (int): The number of edges in the graph.
         """
         return self._number_of_edges
 

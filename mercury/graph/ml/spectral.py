@@ -55,7 +55,7 @@ class SpectralClustering(BaseClass):
             graph (Graph): A mercury graph structure.
 
         Returns:
-            self (object): Fitted self (or raises an error)
+            (self): Fitted self (or raises an error)
 
         """
         if self.mode == "networkx":
@@ -73,7 +73,7 @@ class SpectralClustering(BaseClass):
             graph (Graph): A mercury graph structure.
 
         Returns:
-            self (object): Fitted self (or raises an error)
+            (self): Fitted self (or raises an error)
         """
         gnx = graph.networkx.to_undirected()
 
@@ -104,7 +104,7 @@ class SpectralClustering(BaseClass):
             graph (Graph): A mercury graph structure.
 
         Returns:
-            self (object): Fitted self (or raises an error)
+            (self): Fitted self (or raises an error)
         """
 
         from pyspark.sql import functions as F

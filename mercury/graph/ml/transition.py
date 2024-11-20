@@ -44,7 +44,7 @@ class Transition(BaseClass):
             G (Graph): A `mercury.graph` Graph.
 
         Returns:
-            self (object): Fitted self (or raises an error).
+            (self): Fitted self (or raises an error).
 
         What .fit() does is scaling the non-zero rows to make them sum 1 as they are probability distributions and make the zero rows
         recurrent states. A recurrent state is a final state, a state whose next state is itself.

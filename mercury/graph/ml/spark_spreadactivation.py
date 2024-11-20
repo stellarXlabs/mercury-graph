@@ -203,7 +203,7 @@ class SparkSpreadingActivation(BaseClass):
             transfer_function: weighted or unweighted, how to transfer influence along edges
 
         Returns:
-            graphframe object, new network with updated new calculation of attribute in vertices
+            (Graphframe): new network with updated new calculation of attribute in vertices
         """
 
         # Pass influence/message to neighboring nodes (weighted/unweighted option)
