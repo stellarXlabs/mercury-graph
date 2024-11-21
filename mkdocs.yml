@@ -1,34 +1,71 @@
 site_name: mercury-graph
 repo_url: https://github.com/BBVA/mercury-graph/
 repo_name: mercury-graph
+
 theme:
   name: material
   features:
   - tabs
   - navigation.indexes
+  - navigation.path
+  - navigation.expand
+  - search.suggest
+  - search.highlight
+  - search.share
+  - content.footnote.tooltips
   icon:
     logo: material/book-open-page-variant
     repo: fontawesome/brands/github
-site_dir: site
+  palette: 
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-7 
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
 nav:
 - Home: index.md
-- Api:
-  - base tests: reference/basetests.md
-  - data tests: reference/data_tests.md
-  - model tests: reference/model_tests.md
+- API:
+  - mercury.graph.core: reference/core.md
+  - mercury.graph.ml: reference/ml.md
+  - mercury.graph.embeddings: reference/embeddings.md
+  - mercury.graph.viz: reference/viz.md
+
+docs_dir: docs
+site_dir: site
+
+extra:
+  social:
+    - icon: fontawesome/brands/linkedin 
+      link: https://es.linkedin.com/showcase/bbva-ai-factory/
+    - icon: fontawesome/brands/x-twitter 
+      link: https://x.com/bbva_aifactory
+
+extra_css:
+- stylesheets/extra.css
+extra_javascript:
+- https://polyfill.io/v3/polyfill.min.js?features=es6
+- https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+
 markdown_extensions:
 - codehilite
 - admonition
 - pymdownx.superfences
 - pymdownx.arithmatex:
     generic: true
-extra_css:
-- stylesheets/extra.css
-extra_javascript:
-- javascripts/config.js
-- https://polyfill.io/v3/polyfill.min.js?features=es6
-- https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+- footnotes
+
 plugins:
+- search
 - mkdocstrings:
     handlers:
       python:
@@ -37,6 +74,8 @@ plugins:
           show_submodules: true
           merge_init_into_class: true
           docstring_style: google
-    watch:
+
+watch:
     - mercury/graph
+
 dev_addr: 0.0.0.0:8080

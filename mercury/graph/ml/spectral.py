@@ -4,7 +4,7 @@ from pandas import DataFrame
 from networkx import normalized_laplacian_matrix
 from networkx.algorithms.community import modularity as nx_modularity
 from sklearn.cluster import KMeans
-from numpy.linalg import eig
+from numpy.linalg import eigh
 from numpy import asarray
 import numpy as np
 
@@ -15,7 +15,7 @@ class SpectralClustering(BaseClass):
 
     Args:
         n_clusters (int): The number of clusters that you want to detect.
-        random_state (int): seed for reproducibility
+        random_state (int): Seed for reproducibility
         mode (str): Calculation mode. Pass 'networkx' for using pandas + networkx or
                     'spark' for spark + graphframes
         max_iterations (int): Max iterations parameter (only used if mode==spark)
@@ -55,7 +55,7 @@ class SpectralClustering(BaseClass):
             graph (Graph): A mercury graph structure.
 
         Returns:
-            self (object): Fitted self (or raises an error)
+            (self): Fitted self (or raises an error)
 
         """
         if self.mode == "networkx":
@@ -73,13 +73,16 @@ class SpectralClustering(BaseClass):
             graph (Graph): A mercury graph structure.
 
         Returns:
-            self (object): Fitted self (or raises an error)
+            (self): Fitted self (or raises an error)
         """
         gnx = graph.networkx.to_undirected()
 
-        L = normalized_laplacian_matrix(gnx)
+        L = normalized_laplacian_matrix(gnx).todense()
 
-        w, v = eig(L.todense())
+        if not np.allclose(L, L.T):
+            raise ValueError("Normalized Laplacian matrix of the undirected graph should be symmetric")
+
+        w, v = eigh(L)
 
         U = v[:, : self.n_clusters]
         U = asarray(U)
@@ -101,7 +104,7 @@ class SpectralClustering(BaseClass):
             graph (Graph): A mercury graph structure.
 
         Returns:
-            self (object): Fitted self (or raises an error)
+            (self): Fitted self (or raises an error)
         """
 
         from pyspark.sql import functions as F

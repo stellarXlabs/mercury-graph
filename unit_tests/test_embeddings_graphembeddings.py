@@ -69,7 +69,7 @@ class TestGraphEmbedding(object):
         ge.fit(sample_g)
 
         assert ge.node_ids == list(sample_g.networkx.nodes)
-        assert isinstance(ge.graph_embedding_, Embeddings)
+        assert isinstance(ge.embeddings_, Embeddings)
 
     def test__load(self, sample_g, manage_path_tmp_binf):
         """
@@ -91,8 +91,8 @@ class TestGraphEmbedding(object):
         assert (
             sum(
                 sum(
-                    ge1.graph_embedding_.embeddings_matrix_
-                    != ge2.graph_embedding_.embeddings_matrix_
+                    ge1.embeddings_.embeddings_matrix_
+                    != ge2.embeddings_.embeddings_matrix_
                 )
             )
             > 0
@@ -119,8 +119,8 @@ class TestGraphEmbedding(object):
         ge = GraphEmbedding(dimension=2, n_jumps=5)
         # Set embedding matrix to known most similar embeddings
         ge.node_ids = ["A", "B", "C", "D"]
-        ge.graph_embedding_ = Embeddings(dimension=2)
-        ge.graph_embedding_.embeddings_matrix_ = np.array(
+        ge.embeddings_ = Embeddings(dimension=2)
+        ge.embeddings_.embeddings_matrix_ = np.array(
             [[1, 0], [0, 1], [1, 0.5], [-1, 0]]
         )
 

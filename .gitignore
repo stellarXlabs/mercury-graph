@@ -1,4 +1,6 @@
 .vscode
+.coverage
+site
 **/__pycache__/
 **/checkpoint/
 **/tmp_checkpoint/

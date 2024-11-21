@@ -122,7 +122,7 @@ class GraphEmbedding(BaseClass):
             (numpy.matrix): A numpy matrix of one row
 
         """
-        return self.graph_embedding_.embeddings_matrix_[self.node_ids.index(arg)]
+        return self.embeddings_.embeddings_matrix_[self.node_ids.index(arg)]
 
     def fit(self, g: Graph):
         """
@@ -190,13 +190,13 @@ class GraphEmbedding(BaseClass):
             self.max_per_epoch if self.max_per_epoch is not None else self.n_jumps,
         )
 
-        self.graph_embedding_ = Embeddings(
+        self.embeddings_ = Embeddings(
             dimension=self.dimension,
             num_elements=len(self.node_ids),
             learn_step=self.learn_step,
             bidirectional=self.bidirectional,
         )
-        self.graph_embedding_.fit(converge, diverge)
+        self.embeddings_.fit(converge, diverge)
 
         return self
 
@@ -205,12 +205,12 @@ class GraphEmbedding(BaseClass):
         Return the internal Embeddings object.
 
         Returns:
-            The embedding which is a dense matrix of `float` that can be used with `numpy` functions.
+            (mercury.graph.embeddings.Embeddings): The embedding which is a dense matrix of `float` that can be used with `numpy` functions.
         """
-        if not hasattr(self, "graph_embedding_"):
+        if not hasattr(self, "embeddings_"):
             return
 
-        return self.graph_embedding_
+        return self.embeddings_
 
     def get_most_similar_nodes(
         self, node_id, k=5, metric="cosine", return_as_indices=False
@@ -222,7 +222,7 @@ class GraphEmbedding(BaseClass):
             node_id (object): Id of the node that we want to search the similar nodes.
             k (int): Number of most similar nodes to return
             metric (str): metric to use as a similarity.
-            return_as_indices (bool): if return the nodes as indices(False), or as node ids (True)
+            return_as_indices (bool): if return the nodes as indices (False), or as node ids (True)
 
         Returns:
             (list): list of k most similar nodes and list of similarities of the most similar nodes
@@ -231,7 +231,7 @@ class GraphEmbedding(BaseClass):
         node_index = self.node_ids.index(node_id)
 
         ordered_indices, ordered_similarities = (
-            self.graph_embedding_.get_most_similar_embeddings(node_index, k, metric)
+            self.embeddings_.get_most_similar_embeddings(node_index, k, metric)
         )
 
         if not return_as_indices:
@@ -255,7 +255,7 @@ class GraphEmbedding(BaseClass):
         with bz2.BZ2File(file_name, "w") as f:
             pickle.dump(GraphEmbedding.FILE_HEAD, f)
             pickle.dump(save_embedding, f)
-            pickle.dump(self.graph_embedding_.dimension, f)
+            pickle.dump(self.embeddings_.dimension, f)
 
             pickle.dump(self.node_ids, f)
 
@@ -268,7 +268,7 @@ class GraphEmbedding(BaseClass):
             pickle.dump(self.TotW, f)
 
             if save_embedding:
-                np.save(f, self.graph_embedding_.embeddings_matrix_)
+                np.save(f, self.embeddings_.embeddings_matrix_)
 
             pickle.dump(GraphEmbedding.FILE_END, f)
 
@@ -296,10 +296,10 @@ class GraphEmbedding(BaseClass):
 
             self.TotW = pickle.load(f)
 
-            self.graph_embedding_ = Embeddings(dimension, len(self.node_ids))
+            self.embeddings_ = Embeddings(dimension, len(self.node_ids))
 
             if has_emb:
-                self.graph_embedding_.embeddings_matrix_ = np.load(f)
+                self.embeddings_.embeddings_matrix_ = np.load(f)
 
             end = pickle.load(f)
 
