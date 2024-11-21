@@ -222,7 +222,7 @@ class GraphEmbedding(BaseClass):
             node_id (object): Id of the node that we want to search the similar nodes.
             k (int): Number of most similar nodes to return
             metric (str): metric to use as a similarity.
-            return_as_indices (bool): if return the nodes as indices(False), or as node ids (True)
+            return_as_indices (bool): if return the nodes as indices (False), or as node ids (True)
 
         Returns:
             (list): list of k most similar nodes and list of similarities of the most similar nodes

@@ -35,13 +35,14 @@ class SparkSpreadingActivation(BaseClass):
     """
     This class is a model that represents a “word-of-mouth” scenario where a node influences his neighbors, from where
     the influence spreads to other neighbors, and so on.
+
     At the end of the diffusion process, we inspect the amount of influence received by each node. Using a
     threshold-based technique, a node that is currently not influenced can be declared to be a potential future one,
     based on the influence that has been accumulated.
+
     The diffusion model is based on Spreading Activation (SPA) techniques proposed in cognitive psychology
-    and later used for trust metric computations.
-    For more details, please see paper entitled "Social Ties and their Relevance to Churn in Mobile Telecom Networks"
-    (https://pdfs.semanticscholar.org/3275/3d80adb5ec2d4a974b5d1a872e2c957b263b.pdf)
+    and later used for trust metric computations. For more details, please see paper entitled 
+    ["Social Ties and their Relevance to Churn in Mobile Telecom Networks"](https://pdfs.semanticscholar.org/3275/3d80adb5ec2d4a974b5d1a872e2c957b263b.pdf)
 
     Args:
         attribute (str): Column name which will store the amount of influence spread
@@ -80,8 +81,9 @@ class SparkSpreadingActivation(BaseClass):
     ):
         """
         Perform all iterations of spread_activation
+
         Args:
-            G (mercury.graph.core.Graph): A `mercury.graph` Graph object.
+            g (mercury.graph.core.Graph): A `mercury.graph` Graph object.
             seed_nodes (Union[List, pyspark.sql.DataFrame]): Collection of nodes that are the "seed" or are the source to spread
                 the influence. It must be pyspark dataframe with column 'id' or python list
 
@@ -117,6 +119,7 @@ class SparkSpreadingActivation(BaseClass):
     ):
         """
         Set seed nodes which are the source of influence using pyspark dataframe.
+
         Args:
             G (mercury.graph.core.Graph): A `mercury.graph` Graph object.
             seed_nodes (Union[List, pyspark.sql.DataFrame]): Collection of nodes that are the source to spread
@@ -165,6 +168,7 @@ class SparkSpreadingActivation(BaseClass):
         """
         Compute weighted and unweighted in and out degrees in graph. Re-declares graph to add the following
         attributes: inDegree, outDegree, w_inDegree, w_outDegree.
+
         Args:
             - graph: graphframe object, network
         """
@@ -196,6 +200,7 @@ class SparkSpreadingActivation(BaseClass):
     def _spread_activation_step(self, g: Graph):
         """
         One step in the spread activation model.
+
         Args:
             graph: graphframe object, network
             attribute: str, name of column for attribute/influence

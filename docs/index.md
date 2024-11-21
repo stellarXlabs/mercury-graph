@@ -23,8 +23,7 @@ The easiest way to install `mercury-graph` is using `pip`:
 
 ### Repository
 
-Website: [https://github.com/BBVA/mercury-graph](https://github.com/BBVA/mercury-graph)
-
+The website for the GitHub repository can be found [here](https://github.com/BBVA/mercury-graph).
 
 ## Help and support
 

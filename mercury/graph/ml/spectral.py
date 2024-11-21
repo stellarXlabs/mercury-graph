@@ -15,7 +15,7 @@ class SpectralClustering(BaseClass):
 
     Args:
         n_clusters (int): The number of clusters that you want to detect.
-        random_state (int): seed for reproducibility
+        random_state (int): Seed for reproducibility
         mode (str): Calculation mode. Pass 'networkx' for using pandas + networkx or
                     'spark' for spark + graphframes
         max_iterations (int): Max iterations parameter (only used if mode==spark)

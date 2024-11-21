@@ -133,25 +133,29 @@ class Graph:
 
     The conventions can be found here:
 
-    - Scikit API: https://scikit-learn.org/stable/developers/develop.html#apis-of-scikit-learn-objects
-    - On scikit conventions: https://scikit-learn.org/stable/glossary.html
+    - [Scikit API](https://scikit-learn.org/stable/developers/develop.html#apis-of-scikit-learn-objects)
+    - [On scikit conventions](https://scikit-learn.org/stable/glossary.html)
 
     Args:
         data (pd.DataFrame, nx.Graph or pyspark.sql.DataFrame): The data to create the graph from. 
             It can be a pandas DataFrame, a networkx Graph, a pyspark DataFrame, or a Graphframe. 
             In case it already contains a graph (networkx or graphframes), the keys and nodes arguments are ignored.
         keys (dict): A dictionary with keys to specify the columns in the data DataFrame. The keys are:
+
             - 'src': The name of the column with the source node.
             - 'dst': The name of the column with the destination node.
             - 'id': The name of the column with the node id.
             - 'weight': The name of the column with the edge weight.
             - 'directed': A boolean to specify if the graph is directed. (Only for pyspark DataFrames)
+
             When the keys argument is not provided or the key is missing, the default values are:
+
             - 'src': 'src'
             - 'dst': 'dst'
             - 'id': 'id'
             - 'weight': 'weight'
             - 'directed': True
+
         nodes (pd.DataFrame): A pandas DataFrame or a pyspark DataFrame with the nodes data. (Only when `data` is pandas or pyspark DataFrame and with the
             same type as `data`) If not given, the nodes are inferred from the edges DataFrame.
     """
@@ -402,10 +406,11 @@ class Graph:
         """
         Returns True if the graph is directed, False otherwise.
 
-        Note: Graphs created using graphframes are always directed. The way around it is to add the reverse edges to the graph.
-        This can be done by creating the Graph with pyspark DataFrame() and defining a key 'directed' set as False in the `dict`
-        argument. Otherwise, the graph will be considered directed even if these reversed edges have been created by other means
-        this class cannot be aware of.
+        Note: 
+            Graphs created using graphframes are always directed. The way around it is to add the reverse edges to the graph.
+            This can be done by creating the Graph with pyspark DataFrame() and defining a key 'directed' set as False in the `dict`
+            argument. Otherwise, the graph will be considered directed even if these reversed edges have been created by other means
+            this class cannot be aware of.
         """
         return self._is_directed
 

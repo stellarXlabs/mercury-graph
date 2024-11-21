@@ -13,11 +13,6 @@ class Transition(BaseClass):
     """
     Create an interface class to manage the adjacency matrix of a directed graph as a transition matrix.
     This enables computing distributions of probabilities over the nodes after a given number of iterations.
-
-    Args
-        fitted_graph_ (Graph): A `mercury.graph` Graph resulting from calling method fit() on a Graph,
-            where its adjacency matrix has been converted into a transition matrix.
-
     """
 
     def __init__(self):
@@ -28,26 +23,25 @@ class Transition(BaseClass):
         Converts the adjacency matrix into a transition matrix. Transition matrices are used to compute the distribution of probability
         of being in each of the nodes (or states) of a directed graph (or Markov process). The distribution for state s is:
 
-
         * $s_t = T*s_{t-1}$
 
         Where:
 
-        T is the transition matrix. After calling.fit(), the adjacency matrix is the transition matrix. You can use .topandas() to see it.
+        T is the transition matrix. After calling.fit(), the adjacency matrix is the transition matrix. You can use .to_pandas() to see it.
         $s_{t-1}$ is the previous state.
 
-        Note:
-            If created using NetworkX directly, the name of the weight must be 'weight' and must be positive. The recommended way
-            to create the graph is using .set_row() which will always name the weight as 'weight' but does not check the value.
+        What .fit() does is scaling the non-zero rows to make them sum 1 as they are probability distributions and make the zero rows
+        recurrent states. A recurrent state is a final state, a state whose next state is itself.
 
-        Args
+        Args:
             G (Graph): A `mercury.graph` Graph.
 
         Returns:
             (self): Fitted self (or raises an error).
 
-        What .fit() does is scaling the non-zero rows to make them sum 1 as they are probability distributions and make the zero rows
-        recurrent states. A recurrent state is a final state, a state whose next state is itself.
+        Note:
+            If created using NetworkX directly, the name of the weight must be 'weight' and must be positive. The recommended way
+            to create the graph is using .set_row() which will always name the weight as 'weight' but does not check the value.
 
         """
         names = list(G.networkx.nodes)
@@ -74,21 +68,19 @@ class Transition(BaseClass):
 
     def to_pandas(self, num_iterations=1):
         """
-        Returns the adjacency (which is the transition matrix after .fit() was called) for a given number of iterations as a pandas
+        Returns the adjacency (which is the transition matrix after `fit()` was called) for a given number of iterations as a pandas
         dataframe with labeled rows and columns.
 
         Args:
             num_iterations (int): If you want to compute the matrix for a different number of iterations, k, you can use this argument to
-                raise the matrix to any non negative integer, since:
-
-        * $s_{t+k} = T^k*s_t$
+                raise the matrix to any non negative integer, since $s_{t+k} = T^k*s_t$
 
         Returns:
             (pd.DataFrame): The transition matrix for num_iterations.
 
         Note:
-            This method does not automatically call .fit(). This allows inspecting the adjacency matrix as a pandas dataframe.
-            The result of computing num_iterations will not make sense if .fit() has not been called before .to_pandas().
+            This method does not automatically call `fit()`. This allows inspecting the adjacency matrix as a pandas dataframe.
+            The result of computing num_iterations will not make sense if `fit()` has not been called before `to_pandas()`.
 
         """
         if self.fitted_graph_ is None:

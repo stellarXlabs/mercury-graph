@@ -4,21 +4,6 @@ Distributed Louvain Algorithm for Community Detection
 This module constitutes a PySpark implementation of the Louvain algorithm for
 community detection. The algorithm aims to find the partition of a graph that
 yields the maximum modularity.
-
-This version of the algorithm differs from [1]_ in that the reassignment of
-nodes to new communities is calculated in parallel, not sequentially. That is,
-all nodes are reassigned at the same time and conflicts (i.e., 1 -> C2 and
-2 -> C1) are resolved with a simple tie-breaking rule.
-
-References
-----------
-[1] Blondel V D, Guillaume J-L, Lambiotte R and Lefebvre E (2008). Fast
-    unfolding of communities in large networks. Journal of Statistical
-    Mechanics: Theory and Experiment, 2008.
-    <https://doi.org/10.1088/1742-5468/2008/10/p10008>
-
-[2] Aynaud T, Blondel V D, Guillaume J-L and Lambiotte R (2013). Multilevel
-    local optimization of modularity. Graph Partitioning (315--345), 2013.
 """
 
 from mercury.graph.core.base import BaseClass
@@ -31,13 +16,30 @@ from typing import Union
 
 class LouvainCommunities(BaseClass):
     """
-    Class that defines the functions that run the Louvain algorithm to find the
-    partition that maximizes the modularity of an undirected graph (as in [1]_).
+    Class that defines the functions that run a PySpark implementation of the 
+    Louvain algorithm to find the partition that maximizes the modularity of an 
+    undirected graph (as in [^1]).
+
+    This version of the algorithm differs from [^1] in that the reassignment of
+    nodes to new communities is calculated in parallel, not sequentially. That is,
+    all nodes are reassigned at the same time and conflicts (i.e., 1 -> C2 and
+    2 -> C1) are resolved with a simple tie-breaking rule. This version also
+    introduces the resolution parameter _gamma_, as in [^2].
+    
+    [^1]: 
+        Blondel V D, Guillaume J-L, Lambiotte R and Lefebvre E (2008). Fast
+        unfolding of communities in large networks. Journal of Statistical
+        Mechanics: Theory and Experiment, 2008.
+        <https://doi.org/10.1088/1742-5468/2008/10/p10008>
+
+    [^2]: 
+        Aynaud T, Blondel V D, Guillaume J-L and Lambiotte R (2013). Multilevel
+        local optimization of modularity. Graph Partitioning (315--345), 2013.
 
     Args:
         min_modularity_gain (float):
-            Modularity gain threshold between each pass (as in [1]_). The
-            algorithm stops if the gain in modularity between the current pass
+            Modularity gain threshold between each pass. The algorithm 
+            stops if the gain in modularity between the current pass
             and the previous one is less than the given threshold.
 
         max_pass (int):
@@ -47,7 +49,7 @@ class LouvainCommunities(BaseClass):
             Maximum number of iterations within each pass.
 
         resolution (float):
-            The resolution parameter _gamma_ as introduced in [2]_. Its value
+            The resolution parameter _gamma_. Its value
             must be greater or equal to zero. If resolution is less than 1,
             modularity favors larger communities, while values greater than 1
             favor smaller communities.
@@ -219,7 +221,7 @@ class LouvainCommunities(BaseClass):
         return self
 
     def _verify_data(self, df, expected_cols_grouping, expected_cols_others):
-        """Checks if `edges` meets the format expected by `louvainCommunities`.
+        """Checks if `edges` meets the format expected by `LouvainCommunities`.
 
         Args:
             edges (pyspark.sql.dataframe.DataFrame):
@@ -255,7 +257,7 @@ class LouvainCommunities(BaseClass):
         Args:
             df (pyspark.sql.dataframe.DataFrame):
                 A pyspark dataframe representing the series of partitions made by
-                `louvainCommunities` (a dataframe with columns 'id', 'pass0',
+                `LouvainCommunities` (a dataframe with columns 'id', 'pass0',
                 'pass1', 'pass2', 'pass3', etc.).
         """
 
@@ -271,8 +273,7 @@ class LouvainCommunities(BaseClass):
     def _label_degrees(self, edges, partition):
         """
         This function uses the edges of a graph to calculate the weighted degrees
-        of each node (as in [1]_) and joins the result with the partition passed by
-        the user.
+        of each node and joins the result with the partition passed by the user.
 
         Args:
             edges (pyspark.sql.dataframe.DataFrame):
@@ -292,16 +293,6 @@ class LouvainCommunities(BaseClass):
                 This function returns a dataframe with columns `id` (representing the ID
                 of each node in the graph), `c` (representing each node's community) and
                 `degree` (representing each node's degree).
-
-        Example:
-            ```python
-            >>> labelDegrees(edges, partition).show()
-            | id|  c|degree|
-            |---|---|------|
-            |  0|  2|     1|
-            |  1|  2|     2|
-            |  2|  2|     2|
-            ```
         """
 
         # Get id, community and weighted degree
@@ -346,16 +337,6 @@ class LouvainCommunities(BaseClass):
                 This function returns `edges` with two additional columns: the community
                 that the source node belongs to (`cSrc`) and the community that the
                 destination node belongs to (`cDst`).
-
-        Example:
-            ```python
-            >>> labelEdges(graph, partition).show()
-            |dst|src|weight|cSrc|cDst|
-            |---|---|------|----|----|
-            |  0|  1|     1|   2|   2|
-            |  6|  7|     1|   6|   6|
-            |  6|  8|     1|   6|   6|
-            ```
         """
 
         # Get communities
@@ -380,7 +361,7 @@ class LouvainCommunities(BaseClass):
         return ret
 
     def _calculate_m(self, edges) -> int:
-        """Get the weighted size of an undirected graph (as in [1]_, where $m$ is
+        """Get the weighted size of an undirected graph (where $m$ is
         defined as $m = \\frac{1}{2} \\sum_{ij} A_{ij}$)).
 
         Args:
@@ -415,13 +396,13 @@ class LouvainCommunities(BaseClass):
                 node's ID) and `c` (indicating each node's assigned community).
 
             resolution (float):
-                The resolution parameter _gamma_ as introduced in [2]_. Its value
+                The resolution parameter _gamma_. Its value
                 must be greater or equal to zero. If resolution is less than 1,
                 modularity favors larger communities, while values greater than 1
                 favor smaller communities.
 
             (int):
-                The weighted size of the graph (the output of `getM()`).
+                The weighted size of the graph (the output of `_get_m()`).
 
         Returns:
             (float):
@@ -585,16 +566,16 @@ class LouvainCommunities(BaseClass):
         return dq
 
     def _sort_passes(self, res) -> list:
-        """Takes the output of `louvainCommunities` and returns a list containing
+        """Takes the output of `LouvainCommunities` and returns a list containing
         its columns ordered by their integer part in ascending order.
-        For example, if the columns returned by `louvainCommunities are
+        For example, if the columns returned by `LouvainCommunities are
         `['pass2', 'id', 'pass1', 'pass0']`, this function will turn the list to
         `['id', 'pass0', 'pass1', 'pass2']`.
-        This function also supports cases where `maxPass > 10`.
+        This function also supports cases where `max_pass > 10`.
 
         Args:
             res (pyspark.sql.dataframe.DataFrame):
-                A pyspark dataframe representing the output of `louvainCommunities`.
+                A pyspark dataframe representing the output of `LouvainCommunities`.
                 `res` must have columns 'id', 'pass0', 'pass1', 'pass2', etc.
         """
 

@@ -72,11 +72,11 @@ class SparkNode2Vec(BaseClass):
             w2v_step_size (float): This is the Spark Word2Vec parameter stepSize, the default value is the original default value.
             w2v_min_count (int): This is the Spark Word2Vec parameter minCount, the default value is the original default value (5). Is the
                 minimum number of times that a node has to appear to generate an embedding.
-            path_cache (str): folder where random walks will be stored, the default value is None which entails that random walks will not
+            path_cache (str): Folder where random walks will be stored, the default value is None which entails that random walks will not
                 be stored.
-            use_cached_rw (bool): flag that indicates if random walks should be read from disk (hence, they will not be computed again).
+            use_cached_rw (bool): Flag that indicates if random walks should be read from disk (hence, they will not be computed again).
                 Setting this parameter to True requires a valid path_cache.
-            n_partitions_cache (int): number of partitions that will be used when storing the random walks, to optimize read access.
+            n_partitions_cache (int): Number of partitions that will be used when storing the random walks, to optimize read access.
                 The default value is 10.
             load_file (str): (optional) The full path to a parquet file containing a serialized SparkNode2Vec object. This file must be created
                 using SparkNode2Vec.save().
@@ -117,15 +117,14 @@ class SparkNode2Vec(BaseClass):
         """
         Train the embedding by doing random walks.
 
+        Random walk paths are available in attribute `paths_`.
+
         Args:
             G (mercury.graph.core.Graph): A `mercury.graph` Graph object. The embedding will be created so that each row in the embedding maps
                 a node ID in G. (This parameter will be ignored when `load_file` is used.)
 
         Returns:
             (self): Fitted self (or raises an error)
-
-        Random walk paths are available in attribute `paths_`.
-        Spark's Word2Vec model fitted on paths_ is available in attribute `node2vec_` through method `model()`.
         """
 
         if self.path_cache is None:

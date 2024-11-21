@@ -41,10 +41,11 @@ class Embeddings(BaseClass):
     Note:
         **On dimension:** Embeddings cannot be zero (that is against the whole concept). Smaller dimension embeddings can only hold
         few elements without introducing spurious correlations by some form of 'birthday attack' phenomenon as elements increase. Later
-        it is very hard to get rid of that spurious 'knowledge'. **Solution**: With may elements, you have to go to high enough dimension
-        even if the structure is simple. Pretending to fit many embeddings in low dimension without them being correlated is like
-        pretending to plot a trillion random points in a square centimeter while keeping them 1 mm apart from each other: It's simply
-        impossible!
+        it is very hard to get rid of that spurious 'knowledge'. 
+
+        **Solution**: With may elements, you have to go to high enough dimension even if the structure is simple. 
+        Pretending to fit many embeddings in low dimension without them being correlated is like pretending to plot a trillion random 
+        points in a square centimeter while keeping them 1 mm apart from each other: It's simply impossible!
     """
 
     def __init__(
