@@ -15,7 +15,7 @@ class SpectralClustering(BaseClass):
 
     Args:
         n_clusters (int): The number of clusters that you want to detect.
-        random_state (int): seed for reproducibility
+        random_state (int): Seed for reproducibility
         mode (str): Calculation mode. Pass 'networkx' for using pandas + networkx or
                     'spark' for spark + graphframes
         max_iterations (int): Max iterations parameter (only used if mode==spark)
@@ -55,7 +55,7 @@ class SpectralClustering(BaseClass):
             graph (Graph): A mercury graph structure.
 
         Returns:
-            self (object): Fitted self (or raises an error)
+            (self): Fitted self (or raises an error)
 
         """
         if self.mode == "networkx":
@@ -73,7 +73,7 @@ class SpectralClustering(BaseClass):
             graph (Graph): A mercury graph structure.
 
         Returns:
-            self (object): Fitted self (or raises an error)
+            (self): Fitted self (or raises an error)
         """
         gnx = graph.networkx.to_undirected()
 
@@ -104,7 +104,7 @@ class SpectralClustering(BaseClass):
             graph (Graph): A mercury graph structure.
 
         Returns:
-            self (object): Fitted self (or raises an error)
+            (self): Fitted self (or raises an error)
         """
 
         from pyspark.sql import functions as F

@@ -114,7 +114,7 @@ class Moebius:
                 to the displayed radius.
 
         Returns:
-            The node configuration dictionary
+            (dict): The node configuration dictionary
         """
 
         config = {}
