@@ -70,7 +70,9 @@ After installation, the test suite can be launched with coverage statistics from
 
 ## Contributing
 
-<!-- TODO: Write this! -->
+If you can complete a new feature on your own (new feature, doc, tests, version bump, changelog), you can directly create a Pull request to the master branch. Of course, you will get help via the PR.
+
+An easier way to contribute is to create a new issue. If the idea is accepted, we will create a branch for you and start working on how to implement it.
 
 
 ## Help and support
