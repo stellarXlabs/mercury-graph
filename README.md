@@ -16,8 +16,8 @@
 
 ## Try it without installation in Google Colab
 
-<!-- * mercury.graph methods using the [FIFA dataset](https://www.kaggle.com/datasets/artimous/complete-fifa-2017-player-dataset-global) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://www.google.com) -->
-<!-- * mercury.graph methods using the [BankSim dataset](https://www.researchgate.net/publication/265736405_BankSim_A_Bank_Payment_Simulation_for_Fraud_Detection_Research) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://www.google.com) -->
+* mercury.graph methods using the [FIFA dataset](https://www.kaggle.com/datasets/artimous/complete-fifa-2017-player-dataset-global) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://www.google.com)
+* mercury.graph methods using the [BankSim dataset](https://www.researchgate.net/publication/265736405_BankSim_A_Bank_Payment_Simulation_for_Fraud_Detection_Research) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://www.google.com)
 
 
 ## Install
@@ -25,16 +25,6 @@
 ```bash
 pip install mercury-graph
 ```
-
-
-## Usage
-
-<!-- TODO: Write this! -->
-
-
-### Usage with Docker
-
-<!-- TODO: Write this! -->
 
 
 ## Documentation
