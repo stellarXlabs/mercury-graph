@@ -78,8 +78,19 @@ define('moebius', ['d3'], function(d3) {
     }
     let edgeScaler = createScaler(edgeSizeThresholds, baseWidth, edgeScaleType);
 
+    function detectEnvironment() {
+        if (typeof google !== 'undefined' && typeof google.colab !== 'undefined') {
+            return 'google_colab';
+        } else if (typeof Jupyter !== 'undefined' && typeof Jupyter.notebook !== 'undefined') {
+            return 'jupyter_notebook';
+        } else {
+            return 'unknown';
+        }
+    }
+
     // Base-SVG object parameters
-    const externalDiv = d3.select(element.get(0))
+    const d3_select = detectEnvironment() === "google_colab" ? "body" : element.get(0);
+    const externalDiv = d3.select(d3_select)
         .append('div')
         .attr('class', 'external-div');
 
@@ -1584,17 +1595,28 @@ define('moebius', ['d3'], function(d3) {
      */
     function executePython(python) {
       return new Promise((resolve, reject) => {
-        const callbacks = {
-          iopub: {
-            output: (data) => ((data.content.data != null) ? resolve(data.content.data['text/plain']) :
-                               reject(data.content.ename + '\n' + data.content.evalue + '\n' + data.content.traceback)),
-          },
-        };
-        Jupyter.notebook.kernel.execute(`${python}`, callbacks, {
-          silent: false,
-          store_history: false,
-          stop_on_error: true,
-        });
+        if (detectEnvironment() === "google_colab") {
+          google.colab.kernel.invokeFunction("notebook.colab_execute_python", [`${python}`], {})
+            .then(response => {
+              const output = response.data['text/plain'];
+              resolve(output);
+          })
+          .catch(error => {
+            reject(error);
+          });
+        } else if (detectEnvironment() === "jupyter_notebook") {
+          const callbacks = {
+            iopub: {
+              output: (data) => ((data.content.data != null) ? resolve(data.content.data['text/plain']) :
+                                reject(data.content.ename + '\n' + data.content.evalue + '\n' + data.content.traceback)),
+            },
+          };
+          Jupyter.notebook.kernel.execute(`${python}`, callbacks, {
+            silent: false,
+            store_history: false,
+            stop_on_error: true,
+          });
+        }
       });
     }
 
