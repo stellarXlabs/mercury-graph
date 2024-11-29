@@ -17,8 +17,11 @@
 ## Try it without installation in Google Colab
 
 * mercury.graph methods using the [FIFA dataset](https://www.kaggle.com/datasets/artimous/complete-fifa-2017-player-dataset-global) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/BBVA/mercury-graph/blob/master/tutorials/mercury-graph-tutorial-fifa.ipynb)
+
   * Version without Spark [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/BBVA/mercury-graph/blob/master/tutorials/mercury-graph-tutorial-fifa-nospark.ipynb)
+
 * mercury.graph methods using the [BankSim dataset](https://www.researchgate.net/publication/265736405_BankSim_A_Bank_Payment_Simulation_for_Fraud_Detection_Research) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/BBVA/mercury-graph/blob/master/tutorials/mercury-graph-tutorial-banksim.ipynb)
+
   * Version without Spark [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/BBVA/mercury-graph/blob/master/tutorials/mercury-graph-tutorial-banksim-nospark.ipynb)
 
 
