@@ -8,7 +8,6 @@ import mercury.graph.viz as viz
 
 """
 ISSUES:
-    - Cast integer IDs to string
     - Test (fix) with jupyterlab.
     - Fix spark viz issue despite the callback returning as expected.
     - Understand why the JS paints some nodes in splitted.

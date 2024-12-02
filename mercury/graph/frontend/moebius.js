@@ -1304,7 +1304,8 @@ define('moebius', ['d3'], function(d3) {
      * @param {number} depth
      */
     function expandNode(nodeID, nodeLimit = baseNodeLimit, depth = baseDepth) {
-      executePython(`${instance_name}._get_adjacent_nodes_moebius('${nodeID}', ${nodeLimit}, depth=${depth})`)
+      const nodeID_param = typeof nodeID === "number" ? nodeID : `'${nodeID}'`;
+      executePython(`${instance_name}._get_adjacent_nodes_moebius(${nodeID_param}, ${nodeLimit}, depth=${depth})`)
           .then((result) => managePythonOutput(result));
     }
 
@@ -1317,7 +1318,8 @@ define('moebius', ['d3'], function(d3) {
      * @param {number} depth
      */
     function searchNewNode(nodeID, nodeLimit = baseNodeLimit, depth = baseDepth) {
-      executePython(`${instance_name}._get_adjacent_nodes_moebius('${nodeID}', ${nodeLimit}, depth=${depth})`)
+      const nodeID_param = typeof nodeID === "number" ? nodeID : `'${nodeID}'`;
+      executePython(`${instance_name}._get_adjacent_nodes_moebius(${nodeID_param}, ${nodeLimit}, depth=${depth})`)
           .then((result) => {
             const emptyResult = `'{"nodes": [], "links": []}'`;
             if (result === emptyResult) {
