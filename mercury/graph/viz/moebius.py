@@ -45,7 +45,7 @@ class Moebius:
         self._int_id_map = {node['id'] : i for i, node in enumerate(self.G.nodes)}
 
         # Define callback for JS interactions within Google Colab
-        if importlib.util.find_spec('google.colab') is not None:
+        if importlib.util.find_spec('google') is not None and importlib.util.find_spec('google.colab') is not None:
             from google.colab import output
             from IPython import get_ipython
 
