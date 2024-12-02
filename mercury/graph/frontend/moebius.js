@@ -84,6 +84,7 @@ define('moebius', ['d3'], function(d3) {
         } else if (typeof Jupyter !== 'undefined' && typeof Jupyter.notebook !== 'undefined') {
             return 'jupyter_notebook';
         } else {
+            alert("Moebius is currently only compatible with Google Colab and Jupyter Notebooks Classic (prior to v7)");
             return 'unknown';
         }
     }
