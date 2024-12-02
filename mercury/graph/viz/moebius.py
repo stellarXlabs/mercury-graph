@@ -14,6 +14,9 @@ class Moebius:
     """
     Moebius class for visualizing graphs using JavaScript and HTML.
 
+    Note:
+        Moebius is currently only compatible with Google Colab and Jupyter Notebooks Classic (prior to v7).
+
     Usage:
         ```python
         from mercury.graph.viz import Moebius
