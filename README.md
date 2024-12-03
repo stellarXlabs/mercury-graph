@@ -13,7 +13,7 @@
 
 **`mercury-graph`** is a Python library that offers **graph analytics capabilities with a technology-agnostic API**, enabling users to apply a curated range of performant and scalable algorithms and utilities regardless of the underlying data framework. The consistent, scikit-like interface abstracts away the complexities of internal transformations, allowing users to effortlessly switch between different graph representations to leverage optimized algorithms implemented using pure Python, [**numba**](https://numba.pydata.org/), [**networkx**](https://networkx.org/) and PySpark [**GraphFrames**](https://graphframes.github.io/graphframes/docs/_site/index.html).
 
-[mercury-graph cheatsheet](docs/images/mercury_graph.png)
+![mercury-graph cheatsheet](docs/images/mercury_graph.png)
 
 
 ## Try it without installation in Google Colab
