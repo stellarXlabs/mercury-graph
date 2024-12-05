@@ -1446,6 +1446,9 @@ define('moebius', ['d3'], function(d3) {
       simulation.force('link').links(graph.links);
       if (d3.select('#double-click-restart-sim').property('checked')) {
           simulation.alpha(1).restart();
+      } else {
+          // Keep simulation with very small force to allow the nodes to blend in the graph
+          simulation.alpha(0.02).restart();
       }
     }
 
@@ -1973,6 +1976,7 @@ define('moebius', ['d3'], function(d3) {
 
       const doubleClickRestartSimDiv = generalTabContent.append('div')
           .attr('class', 'menu-checkbox')
+          .attr('style', 'display: flex;')  // Wrap text
 
       doubleClickRestartSimDiv.append('input')
           .attr('type', 'checkbox')
