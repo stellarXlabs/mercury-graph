@@ -1,21 +1,21 @@
-import importlib.util, inspect, json, os
+import importlib.util, json, os
+
+import anywidget
+import pathlib
+import traitlets
 
 import pandas as pd
 
 from mercury.graph.core.spark_interface import SparkInterface
 
-HTML, Javascript, display = None, None, None
-
+display, HTML = None, None
 if importlib.util.find_spec('IPython.display') is not None:
-    from IPython.display import HTML, Javascript, display
+    from IPython.display import display, HTML
 
 
-class Moebius:
+class Moebius(anywidget.AnyWidget):
     """
     Moebius class for visualizing graphs using JavaScript and HTML.
-
-    Note:
-        Moebius is currently only compatible with Google Colab and Jupyter Notebooks Classic (prior to v7).
 
     Usage:
         ```python
@@ -26,17 +26,24 @@ class Moebius:
         moebius.show()
         ```
 
+    Args:
+        initial_id (str): The id of the node to start the visualization.
+        initial_depth (int): The initial depth of the graph (starting with `initial_id` as 0) to be shown.
+        node_config (dict): A node configuration dictionary created by `node_config()`.
+        edge_config (dict): An edge configuration dictionary created by `edge_config()`.
+
     Attributes:
         G (Graph):          The graph to be visualized.
         use_spark (bool):   Flag indicating if Spark is used.
         front_pat (str):    Path to the frontend resources.
         _int_id_map (dict): A dictionary mapping node IDs to integer IDs.
-        name():             The instance name of the object required by the JS callback mechanism.
     """
 
-    def __init__(self, G):
+    expandNode_params = traitlets.Dict({}).tag(sync=True)
+    searchNewNode_params = traitlets.Dict({}).tag(sync=True)
 
-        if HTML is None:
+    def __init__(self, G, initial_id = None, initial_depth = 1, node_config = None, edge_config = None):
+        if display is None or HTML is None:
             raise ImportError('IPython is not installed')
 
         self.G = G
@@ -44,17 +51,70 @@ class Moebius:
         self.front_pat = os.path.dirname(os.path.dirname(os.path.realpath(__file__))) + '/frontend'
         self._int_id_map = {node['id'] : i for i, node in enumerate(self.G.nodes)}
 
-        # Define callback for JS interactions within Google Colab
-        if importlib.util.find_spec('google') is not None and importlib.util.find_spec('google.colab') is not None:
-            from google.colab import output
-            from IPython import get_ipython
+        if initial_id is None:
+            initial_id = next(iter(self._int_id_map))
 
-            def colab_execute_python(code):
-                # Use get_ipython() to access the Moebius object defined by the user in a Colab cell
-                get_ipython().run_cell(f"_temp_colab_execute_python_result = {code}")
-                return get_ipython().user_ns["_temp_colab_execute_python_result"]
+        initial_json = self._get_adjacent_nodes_moebius(initial_id, depth = initial_depth)
 
-            output.register_callback("notebook.colab_execute_python", colab_execute_python)
+        if node_config is None:
+            node_config = self.node_or_edge_config()
+
+        if edge_config is None:
+            edge_config = self.node_or_edge_config()
+
+        logo_svg = "`" + pathlib.Path(self.front_pat + '/moebius.svg.html').read_text() + "`"
+
+        js_moebius_call = f"""
+            (function(el) {{
+                moebius({initial_json}, {node_config}, {edge_config}, {logo_svg});
+            }})(el);
+        """
+
+        self._esm = f"""
+            import {{ min, max }} from 'https://esm.sh/d3-array@3';
+            import {{ drag }} from 'https://esm.sh/d3-drag@3';
+            import {{ forceX, forceY, forceCollide, forceSimulation, forceLink, forceManyBody, forceCenter }} from 'https://esm.sh/d3-force@3';
+            import {{ scaleOrdinal, scaleLinear, scalePow, scaleSqrt, scaleLog }} from 'https://esm.sh/d3-scale@4';
+            import {{ schemeCategory10 }} from 'https://esm.sh/d3-scale-chromatic@3';
+            import {{ select, selectAll }} from 'https://esm.sh/d3-selection@3';
+            import {{ transition }} from 'https://esm.sh/d3-transition@3';
+            import {{ zoom }} from 'https://esm.sh/d3-zoom@3';
+            const d3 = {{ min, max, select, selectAll, forceSimulation, forceLink, forceManyBody, forceCenter, drag, scaleOrdinal, schemeCategory10, scaleOrdinal, scaleLinear, scalePow, scaleSqrt, scaleLog, zoom, forceX, forceY, forceCollide, transition }};
+
+            export default {{
+                initialize({{ model }}) {{
+                    // Set up shared state or event handlers.
+                    return () => {{
+                    // Optional: Called when the widget is destroyed.
+                    }} 
+                }},
+                render({{ model, el }}) {{
+                    // Render the widget's view into the el HTMLElement.
+                    {pathlib.Path(self.front_pat + '/moebius.js').read_text()}
+                    {js_moebius_call}
+                    return () => {{
+                    // Optional: Called when the view is destroyed.
+                    }}
+                }}
+            }}
+            """
+
+        self._css = pathlib.Path(self.front_pat + '/moebius.css').read_text()
+
+        super().__init__()
+
+
+    # Observers that trigger Python code execution when frontend registers calls to expandNode and searchNewNode
+    @traitlets.observe("expandNode_params")
+    def _on_change_expandNode_params(self, change):
+        my_value = self._get_adjacent_nodes_moebius(change["new"]["nodeID"], change["new"]["nodeLimit"], change["new"]["depth"])
+        self.send({"result": my_value})
+
+    @traitlets.observe("searchNewNode_params")
+    def _on_change_searchNewNode_params(self, change):
+        my_value = self._get_adjacent_nodes_moebius(change["new"]["nodeID"], change["new"]["nodeLimit"], change["new"]["depth"])
+        self.send({"result": my_value})
+
 
     def __str__(self):
         """
@@ -70,39 +130,6 @@ class Moebius:
         """
 
         return self._get_adjacent_nodes_moebius(item)
-
-
-    @property
-    def name(self):
-        """
-        Get the instance name of the object which is required by the JS callback mechanism.
-        """
-
-        return self._get_instance_name()
-
-
-    def JS(self, s):
-        """
-        Syntactic sugar for display(Javascript())
-        """
-
-        display(Javascript(s))
-
-
-    def FJS(self, fn):
-        """
-        Syntactic sugar for display(Javascript(filename = fn))
-        """
-
-        display(Javascript(filename = fn))
-
-
-    def FHT(self, fn):
-        """
-        Syntactic sugar for display(HTML(filename = fn))
-        """
-
-        display(HTML(filename = fn))
 
 
     def node_or_edge_config(self, text_is = None, color_is = None, colors = None, size_is = None, size_range = None, size_scale = 'linear'):
@@ -163,75 +190,12 @@ class Moebius:
         return config
 
 
-    def show(self, initial_id = None, initial_depth = 1, node_config = None, edge_config = None):
+    def show(self):
         """
-        Start the interactive graph visualization in a Jupyter notebook.
-
-        Args:
-            initial_id (str): The id of the node to start the visualization.
-            initial_depth (int): The initial depth of the graph (starting with `initial_id` as 0) to be shown.
-            node_config (dict): A node configuration dictionary created by `node_config()`.
-            edge_config (dict): An edge configuration dictionary created by `edge_config()`.
+        Alias for display(self)
         """
 
-        if initial_id is None:
-            initial_id = next(iter(self._int_id_map))
-
-        initial_json = self._get_adjacent_nodes_moebius(initial_id, depth = initial_depth)
-
-        if node_config is None:
-            node_config = self.node_or_edge_config()
-
-        if edge_config is None:
-            edge_config = self.node_or_edge_config()
-
-        self._load_moebius_js(initial_json, self.name, node_config, edge_config)
-
-
-    def _get_instance_name(self):
-        """
-        Get the instance name of the object
-        """
-
-        ll = [k for k, v in globals().items() if v is self]
-
-        if not ll:
-            main = importlib.import_module('__main__')
-            ll = [k for k, v in vars(main).items() if v is self and k != '_']
-
-            if not ll:
-                frame = inspect.currentframe()
-                ll = [k for k, v in frame.f_back.f_locals.items() if v is self and k != '_' and k != 'self']
-
-                if not ll:
-                    ll = [k for k, v in frame.f_back.f_back.f_locals.items() if v is self and k != '_' and k != 'self']
-
-        if ll:
-            return ll[0]
-
-        raise NotImplementedError('Could not find instance name')
-
-
-    def _load_moebius_js(self, initial_json, instance_name, node_config, edge_config):
-        """
-        Load the Moebius javascript library and call the function to draw the graph
-        """
-
-        display(HTML('<script src="https://requirejs.org/docs/release/2.3.7/minified/require.js"></script>'))
-        self.JS('require.config({paths: {d3: \'https://d3js.org/d3.v4.min\'}});')
-        self.FJS(self.front_pat + '/moebius.js')
-        self.FHT(self.front_pat + '/moebius.svg.html')
-        self.FHT(self.front_pat + '/moebius.css.html')
-
-        javascript_moebius_call = """
-            (function(element) {
-                require(['moebius'], function(moebius) {
-                    moebius(%s, '%s', %s, %s);
-                });
-            })(element);
-        """ % (initial_json, instance_name, node_config, edge_config)
-
-        self.JS(javascript_moebius_call)
+        display(self)
 
 
     def _get_adjacent_nodes_moebius(self, node_id, limit = 20, depth = 1):
@@ -402,7 +366,12 @@ class Moebius:
 
         graph = self.G.networkx
 
-        neighbors = set(graph.neighbors(node_id)) | set(graph.predecessors(node_id))
+        if self.G.is_directed:
+            neighbors = set(graph.neighbors(node_id)) | set(graph.predecessors(node_id))
+        else:
+            # Undirected graphs are symmetric: predecessors == successors (or neighbors)
+            neighbors = set(graph.neighbors(node_id))
+
         neighbors.add(node_id)
 
         subgraph = graph.subgraph(neighbors)
