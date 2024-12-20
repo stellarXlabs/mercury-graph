@@ -69,7 +69,36 @@ function moebius(graph, node_config, edge_config, logo_svg, stopSimulation) {
   // Base-SVG object parameters
   const externalDiv = d3.select(el)
       .append('div')
-      .attr('class', 'external-div');
+      .attr('class', 'external-div')
+      .on('click', function(event) {
+        const clickedElement = d3.select(event.target);
+        if (!clickedElement.classed('inner-node-circle')) {
+          const thisNode = d3.select(this.parentNode.parentNode);
+          const isMarked = thisNode.classed('marked');
+
+          const containerBox = externalDiv.select('#information-container');
+          containerBox.selectAll('*').remove();
+
+          externalDiv.select('.expand-button').style('visibility', 'hidden');
+          externalDiv.select('.collapse-button').style('visibility', 'hidden');
+
+          if (isMarked && event.ctrlKey) {
+            thisNode.classed('marked', false);
+            updateRemarkedNeighbors();
+            return;
+          } else if (isMarked) {
+            svg.selectAll('.node').classed('marked', false);
+            updateRemarkedNeighbors();
+            return;
+          }
+
+          if (!event.ctrlKey) {
+            svg.selectAll('.node').classed('marked', false);
+          }
+
+          svg.selectAll('.link').classed('marked', false);
+        }
+      });
 
   const svg = externalDiv.append('svg')
       .attr('class', 'graph-svg')
