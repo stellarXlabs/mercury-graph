@@ -1194,16 +1194,16 @@ function moebius(graph, node_config, edge_config, logo_svg, stopSimulation) {
     //   '_int_id', 'inverse'];
 
     let data = [];
-    for (const key in d) {
-      if (d[key] !== null && !hiddenAttributes.includes(key)) {
-        data = data.concat({'name': key, 'value': d[key]});
+    for (const key in d.target.__data__) {
+      if (d.target.__data__[key] !== null && !hiddenAttributes.includes(key)) {
+        data = data.concat({'name': key, 'value': d.target.__data__[key]});
       }
     }
 
     containerBox.append('div')
         .attr('class', 'id-title')
         .append('h1')
-        .text(d.source.id + '-' + d.target.id)
+        .text(d.target.__data__.source.id + '-' + d.target.__data__.target.id)
         .style('font-size', '15px');
 
     const divs = containerBox.selectAll('.info-field')
