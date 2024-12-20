@@ -230,7 +230,7 @@
     position: relative;
     display: flex;
     cursor: pointer;
-    /* height: 25px !important; */
+    height: 25px !important;
     /* height: 100% !important; */
   }
 
