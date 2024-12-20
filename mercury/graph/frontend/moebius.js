@@ -1641,8 +1641,7 @@ function moebius(graph, node_config, edge_config, logo_svg, stopSimulation) {
     }
   }
   model.on("msg:custom", msg => {
-      const emptyResult = `'{"nodes": [], "links": []}'`;
-      if (msg['result'] === emptyResult) {
+      if (msg['result'].length === 0) {
         externalDiv.select('#node-not-found-div').remove();
         const customPrompt = externalDiv.append('div')
             .attr('id', 'node-not-found-div')

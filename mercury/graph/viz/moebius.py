@@ -107,13 +107,19 @@ class Moebius(anywidget.AnyWidget):
     # Observers that trigger Python code execution when frontend registers calls to expandNode and searchNewNode
     @traitlets.observe("expandNode_params")
     def _on_change_expandNode_params(self, change):
-        my_value = self._get_adjacent_nodes_moebius(change["new"]["nodeID"], change["new"]["nodeLimit"], change["new"]["depth"])
-        self.send({"result": my_value})
+        try:
+            my_value = self._get_adjacent_nodes_moebius(change["new"]["nodeID"], change["new"]["nodeLimit"], change["new"]["depth"])
+            self.send({"result": my_value})
+        except:
+            self.send({"result": ""})
 
     @traitlets.observe("searchNewNode_params")
     def _on_change_searchNewNode_params(self, change):
-        my_value = self._get_adjacent_nodes_moebius(change["new"]["nodeID"], change["new"]["nodeLimit"], change["new"]["depth"])
-        self.send({"result": my_value, "searched_nodeID": change["new"]["nodeID"]})
+        try:
+            my_value = self._get_adjacent_nodes_moebius(change["new"]["nodeID"], change["new"]["nodeLimit"], change["new"]["depth"])
+            self.send({"result": my_value, "searched_nodeID": change["new"]["nodeID"]})
+        except:
+            self.send({"result": ""})
 
 
     def __str__(self):
