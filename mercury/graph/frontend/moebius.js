@@ -72,7 +72,8 @@ function moebius(graph, node_config, edge_config, logo_svg, stopSimulation) {
       .attr('class', 'external-div')
       .on('click', function(event) {
         const clickedElement = d3.select(event.target);
-        if (!clickedElement.classed('inner-node-circle')) {
+        // Close information div on click anywhere on the widget
+        if (clickedElement.classed('graph-svg')) {
           const thisNode = d3.select(this.parentNode.parentNode);
           const isMarked = thisNode.classed('marked');
 
