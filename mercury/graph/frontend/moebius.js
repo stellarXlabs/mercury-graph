@@ -1659,6 +1659,9 @@ function moebius(graph, node_config, edge_config, logo_svg, stopSimulation) {
             });
       } else {
         managePythonOutput(msg['result']);
+        if ('searched_nodeID' in msg) {
+          externalDiv.select(`#${msg['searched_nodeID']}`).dispatch('click');
+        }
       }
   });
 

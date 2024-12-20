@@ -113,7 +113,7 @@ class Moebius(anywidget.AnyWidget):
     @traitlets.observe("searchNewNode_params")
     def _on_change_searchNewNode_params(self, change):
         my_value = self._get_adjacent_nodes_moebius(change["new"]["nodeID"], change["new"]["nodeLimit"], change["new"]["depth"])
-        self.send({"result": my_value})
+        self.send({"result": my_value, "searched_nodeID": change["new"]["nodeID"]})
 
 
     def __str__(self):
