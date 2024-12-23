@@ -166,7 +166,7 @@ function moebius(graph, node_config, edge_config, logo_svg, stopSimulation) {
   function computeNodeColors(nodeCategory) {
     if (nodeCategory != null) {
       if (automaticNodeColors) {
-        return defaultNodeColors(nodeCategory);
+        return defaultNodeColors(nodeCategory.toString());
       } else {
         if (nodeCategory in nodeColors) {
           return nodeColors[nodeCategory];
@@ -188,7 +188,7 @@ function moebius(graph, node_config, edge_config, logo_svg, stopSimulation) {
   function computeEdgeColors(edgeCategory) {
     if (edgeCategory != null) {
       if (automaticEdgeColors) {
-        return defaultEdgeColors(edgeCategory);
+        return defaultEdgeColors(edgeCategory.toString());
       } else {
         if (edgeCategory in edgeColors) {
           return edgeColors[edgeCategory];
@@ -2055,7 +2055,7 @@ function moebius(graph, node_config, edge_config, logo_svg, stopSimulation) {
           if (this.checked === true) {
             for (let i = 0; i < nodeColorLabels.length; i++) {
               nodeColorSelectors[i].disabled = true;
-              nodeColorSelectors[i].value = defaultNodeColors(nodeColorLabels[i].textContent);
+              nodeColorSelectors[i].value = defaultNodeColors(nodeColorLabels[i].textContent.toString());
             }
           } else {
             for (let i = 0; i < nodeColorLabels.length; i++) {
@@ -2202,7 +2202,7 @@ function moebius(graph, node_config, edge_config, logo_svg, stopSimulation) {
           if (this.checked === true) {
             for (let i = 0; i < edgeColorLabels.length; i++) {
               edgeColorSelectors[i].disabled = true;
-              edgeColorSelectors[i].value = defaultEdgeColors(edgeColorLabels[i].textContent);
+              edgeColorSelectors[i].value = defaultEdgeColors(edgeColorLabels[i].textContent.toString());
             }
           } else {
             for (let i = 0; i < edgeColorLabels.length; i++) {
@@ -2440,7 +2440,7 @@ function moebius(graph, node_config, edge_config, logo_svg, stopSimulation) {
       confMenu.select('#node-color-checkbox').select('input').node().checked = true;
       for (let i = 0; i < nodeColorLabels.length; i++) {
         nodeColorSelectors[i].disabled = true;
-        nodeColorSelectors[i].value = defaultNodeColors(nodeColorLabels[i].textContent);
+        nodeColorSelectors[i].value = defaultNodeColors(nodeColorLabels[i].textContent.toString());
       }
     } else {
       confMenu.select('#node-color-checkbox').select('input').node().checked = false;
@@ -2474,7 +2474,7 @@ function moebius(graph, node_config, edge_config, logo_svg, stopSimulation) {
       confMenu.select('#edge-color-checkbox').select('input').node().checked = true;
       for (let i = 0; i < edgeColorLabels.length; i++) {
         edgeColorSelectors[i].disabled = true;
-        edgeColorSelectors[i].value = defaultEdgeColors(edgeColorLabels[i].textContent);
+        edgeColorSelectors[i].value = defaultEdgeColors(edgeColorLabels[i].textContent.toString());
       }
     } else {
       confMenu.select('#edge-color-checkbox').select('input').node().checked = false;
