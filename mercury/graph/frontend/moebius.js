@@ -374,8 +374,6 @@ function moebius(graph, node_config, edge_config, logo_svg, stopSimulation) {
    * @param {int} baseRadius Radius of the node circles
    */
   function addNodeStyle(node, baseRadius) {
-    const t = d3.transition()
-        .duration(500);
 
     const gNode = node.append('g')
         .attr('class', 'g-node');
@@ -391,7 +389,6 @@ function moebius(graph, node_config, edge_config, logo_svg, stopSimulation) {
         .on('click', clickNode)
         .on('dblclick', (event, node) => doubleClickNode(event, node, nodeLimit, depth))
         .attr('class', 'inner-node-circle')
-        .transition(t)
         .attr('r', (node) => computeNodeSizes(node[nodeSizeMapping]));
 
     gNode.append('path')
