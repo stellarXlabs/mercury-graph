@@ -13,34 +13,23 @@ if importlib.util.find_spec('IPython.display') is not None:
     from IPython.display import display, HTML
 
 
-class Moebius(anywidget.AnyWidget):
+class MoebiusAnywidget(anywidget.AnyWidget):
     """
-    Moebius class for visualizing graphs using JavaScript and HTML.
-
-    Usage:
-        ```python
-        from mercury.graph.viz import Moebius
-
-        G = ... # A graph object
-        moebius = Moebius(G)
-        moebius.show()
-        ```
+    MoebiusAnywidget class for visualizing graphs creating an anywidget that uses JavaScript and HTML.
+    Note: It is recommended to use wrapper class Moebius.
 
     Args:
+        G (Graph):          The graph to be visualized.
         initial_id (str): The id of the node to start the visualization.
         initial_depth (int): The initial depth of the graph (starting with `initial_id` as 0) to be shown.
         node_config (dict): A node configuration dictionary created by `node_config()`.
         edge_config (dict): An edge configuration dictionary created by `edge_config()`.
 
     Attributes:
-        G (Graph):          The graph to be visualized.
         use_spark (bool):   Flag indicating if Spark is used.
         front_pat (str):    Path to the frontend resources.
         _int_id_map (dict): A dictionary mapping node IDs to integer IDs.
     """
-
-    expandNode_params = traitlets.Dict({}).tag(sync=True)
-    searchNewNode_params = traitlets.Dict({}).tag(sync=True)
 
     def __init__(self, G, initial_id = None, initial_depth = 1, node_config = None, edge_config = None):
         if display is None or HTML is None:
@@ -103,6 +92,9 @@ class Moebius(anywidget.AnyWidget):
 
         super().__init__()
 
+
+    expandNode_params = traitlets.Dict({}).tag(sync=True)
+    searchNewNode_params = traitlets.Dict({}).tag(sync=True)
 
     # Observers that trigger Python code execution when frontend registers calls to expandNode and searchNewNode
     @traitlets.observe("expandNode_params")
@@ -196,14 +188,6 @@ class Moebius(anywidget.AnyWidget):
         return config
 
 
-    def show(self):
-        """
-        Alias for display(self)
-        """
-
-        display(self)
-
-
     def _get_adjacent_nodes_moebius(self, node_id, limit = 20, depth = 1):
         """
         This is the callback function used to interact with the Moebius JS library. Each time you deploy a node in the graph, this
@@ -289,7 +273,7 @@ class Moebius(anywidget.AnyWidget):
         return json.dumps(json_final)
 
 
-    def _get_one_level_subgraph_graphframes(self, node_id, _testing = False):
+    def _get_one_level_subgraph_graphframes(self, node_id):
         """
         Get the one-level subgraph for a given node ID using GraphFrames.
 
@@ -338,11 +322,6 @@ class Moebius(anywidget.AnyWidget):
         def node_int_id(id):
             int_id_map = int_id_map_broadcast.value
             return int_id_map[id]
-
-        if _testing:
-            key, val = next(iter(self._int_id_map.items()))
-            assert node_int_id(key) == val
-            assert edge_int_id(key, key) == N*val + N + val
 
         node_int_id_udf = F.udf(node_int_id, LongType())
 
@@ -445,3 +424,46 @@ class Moebius(anywidget.AnyWidget):
         df_json = df.to_json(orient = 'records', force_ascii = True, date_format = 'iso')
 
         return json.loads(df_json)
+
+class Moebius(MoebiusAnywidget):
+    """
+    Moebius class for visualizing graphs using an anywidget.
+
+    Usage:
+        ```python
+        from mercury.graph.viz import Moebius
+
+        G = ... # A graph object
+        moebius = Moebius(G)
+        moebius.show()
+        ```
+
+    Args:
+        G (Graph):          The graph to be visualized.
+    """
+
+    def __init__(self, G):
+        if display is None or HTML is None:
+            raise ImportError('IPython is not installed')
+
+        self.G = G
+
+
+    def _repr_mimebundle_(self, include=None, exclude=None):
+        """
+        Override display() method to control its execution and avoid errors.
+        """
+        self.show()
+
+
+    def show(self, initial_id = None, initial_depth = 1, node_config = None, edge_config = None):
+        """
+        Start the interactive graph visualization using an anywidget.
+
+        Args:
+            initial_id (str): The id of the node to start the visualization.
+            initial_depth (int): The initial depth of the graph (starting with `initial_id` as 0) to be shown.
+            node_config (dict): A node configuration dictionary created by `node_config()`.
+            edge_config (dict): An edge configuration dictionary created by `edge_config()`.
+        """
+        display(MoebiusAnywidget(self.G, initial_id, initial_depth, node_config, edge_config))
