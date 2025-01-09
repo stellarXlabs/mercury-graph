@@ -1,4 +1,4 @@
-function moebius(graph, node_config, edge_config, logo_svg, stopSimulation) {
+function moebius(graph, node_config, edge_config, isDirected, logo_svg, stopSimulation) {
   /** ************************************
       *  PARAMETERS DEFINITION
       ***************************************/
@@ -20,6 +20,11 @@ function moebius(graph, node_config, edge_config, logo_svg, stopSimulation) {
     'sqrt': d3.scaleSqrt,
     'log': d3.scaleLog,
   };
+
+  // Remove duplicate links if the graph is undirected
+  if (!isDirected) {
+    graph.links = filterDuplicateLinks(graph.links)
+  }
 
   // Display parameters (can be modified in Config menu)
   let nodeLabel = node_config['label'];
@@ -302,7 +307,9 @@ function moebius(graph, node_config, edge_config, logo_svg, stopSimulation) {
           if (nodeSizeMapping !== undefined) {
             dstRadius = computeNodeSizes(d.target[nodeSizeMapping]);
           }
-          d3.select(this).attr('marker-end', marker(color, markerSize, dstRadius));
+          if (isDirected) {
+            d3.select(this).attr('marker-end', marker(color, markerSize, dstRadius));
+          }
         });
   }
 
@@ -319,7 +326,9 @@ function moebius(graph, node_config, edge_config, logo_svg, stopSimulation) {
           if (nodeSizeMapping !== undefined) {
             dstRadius = computeNodeSizes(d.target[nodeSizeMapping]);
           }
-          d3.select(this).attr('marker-end', marker(color, markerSize, dstRadius));
+          if (isDirected) {
+            d3.select(this).attr('marker-end', marker(color, markerSize, dstRadius));
+          }
         });
   }
 
@@ -474,7 +483,9 @@ function moebius(graph, node_config, edge_config, logo_svg, stopSimulation) {
           if (nodeSizeMapping !== undefined) {
             dstRadius = computeNodeSizes(d.target[nodeSizeMapping]);
           }
-          d3.select(this).attr('marker-end', marker(color, markerSize, dstRadius));
+          if (isDirected) {
+            d3.select(this).attr('marker-end', marker(color, markerSize, dstRadius));
+          }
         });
 
     link.append('text')
@@ -523,6 +534,41 @@ function moebius(graph, node_config, edge_config, logo_svg, stopSimulation) {
 
     return 'url(' + color + '/' + markerSize + '/' + dstRadius + ')';
   };
+
+  /**
+   * Filters out duplicate undirected links from a given array of links.
+   * 
+   * A duplicate link is considered any link that has the same source and target nodes,
+   * regardless of whether the link is in the same direction (e.g., 'A' to 'B' and 'B' to 'A').
+   * It is therefore designed for undirected graphs.
+   * 
+   * @param {Array<Object>} links - The array of links to filter.
+   * @returns {Array<Object>} - The filtered array of links with duplicates removed.
+   */
+  function filterDuplicateLinks(links) {
+    const uniqueLinks = new Set();
+    const result = [];
+  
+    links.forEach((link) => {
+      const linkKey = JSON.stringify({
+        source: link.source.id || link.source,
+        target: link.target.id || link.target,
+      });
+  
+      const reverseLinkKey = JSON.stringify({
+        source: link.target.id || link.target,
+        target: link.source.id || link.source,
+      });
+  
+      if (!uniqueLinks.has(linkKey) && !uniqueLinks.has(reverseLinkKey)) {
+        uniqueLinks.add(linkKey);
+        uniqueLinks.add(reverseLinkKey);
+        result.push(link);
+      }
+    });
+
+    return result;
+  }
 
   /** *****************************************
       *  FUNCTIONS - CONNECTED NODES COMPUTING
@@ -1454,6 +1500,10 @@ function moebius(graph, node_config, edge_config, logo_svg, stopSimulation) {
 
     graph.nodes = graph.nodes.concat(newGraph.nodes);
     graph.links = graph.links.concat(newGraph.links);
+    // Remove duplicate links if the graph is undirected
+    if (!isDirected) {
+      graph.links = filterDuplicateLinks(graph.links)
+    }
 
     // Update and restart the simulation.
     updateSimulation(graph);
@@ -2923,7 +2973,6 @@ function moebius(graph, node_config, edge_config, logo_svg, stopSimulation) {
         .attr('type', 'checkbox')
         .on('change', function() {
           const isChecked = d3.select(this).property('checked');
-          // console.log({isChecked});
           hideDisconnectedNodes(isChecked);
         });
 
@@ -3322,8 +3371,6 @@ function moebius(graph, node_config, edge_config, logo_svg, stopSimulation) {
         const totalAdjacentLinks = adjacentLinks.data().length;
         const totalHiddenAdjacentLinks = hiddenAdjacentLinks.data().length;
         const allLinksAreHidden = (totalAdjacentLinks - totalHiddenAdjacentLinks) === 0;
-
-        // console.log({nodeId, totalAdjacentLinks, totalHiddenAdjacentLinks});
 
         if (totalAdjacentLinks > 0 && allLinksAreHidden) {
           return true;

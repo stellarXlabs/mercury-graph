@@ -55,7 +55,7 @@ class MoebiusAnywidget(anywidget.AnyWidget):
 
         js_moebius_call = f"""
             (function(el) {{
-                moebius({initial_json}, {node_config}, {edge_config}, {logo_svg});
+                moebius({initial_json}, {node_config}, {edge_config}, {str(self.G.is_directed).lower()}, {logo_svg});
             }})(el);
         """
 
@@ -317,6 +317,9 @@ class MoebiusAnywidget(anywidget.AnyWidget):
         nodes_df = node_ids.join(graph.vertices, node_ids.source == graph.vertices.id, 'inner').select(graph.vertices['*'])
 
         degrees  = graph.degrees
+        # Edges are duplicated in undirected graphframes -> Fix degree
+        if not self.G.is_directed:
+            degrees = degrees.withColumn('degree', F.ceil(F.col('degree') / 2))
         nodes_df = nodes_df.join(degrees, on = 'id', how = 'left').withColumnRenamed('degree', 'count')
 
         def node_int_id(id):
