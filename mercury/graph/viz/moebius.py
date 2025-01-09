@@ -273,7 +273,7 @@ class MoebiusAnywidget(anywidget.AnyWidget):
         return json.dumps(json_final)
 
 
-    def _get_one_level_subgraph_graphframes(self, node_id):
+    def _get_one_level_subgraph_graphframes(self, node_id, _testing=False):
         """
         Get the one-level subgraph for a given node ID using GraphFrames.
 
@@ -325,6 +325,11 @@ class MoebiusAnywidget(anywidget.AnyWidget):
         def node_int_id(id):
             int_id_map = int_id_map_broadcast.value
             return int_id_map[id]
+
+        if _testing:
+            key, val = next(iter(self._int_id_map.items()))
+            assert node_int_id(key) == val
+            assert edge_int_id(key, key) == N*val + N + val
 
         node_int_id_udf = F.udf(node_int_id, LongType())
 
