@@ -295,17 +295,17 @@ class MoebiusAnywidget(anywidget.AnyWidget):
 
         if self.use_spark:
             json_final = {
-                'nodes': json.loads(nodes_df.toPandas().to_json(orient = 'records')),
-                'links': json.loads(edges_df.toPandas().to_json(orient = 'records'))
+                'nodes': json.loads(nodes_df.toPandas().to_json(orient = 'records', force_ascii = False)),
+                'links': json.loads(edges_df.toPandas().to_json(orient = 'records', force_ascii = False))
             }
 
         else:
             json_final = {
-                'nodes': json.loads(nodes_df.to_json(orient = 'records')),
-                'links': json.loads(edges_df.to_json(orient = 'records'))
+                'nodes': json.loads(nodes_df.to_json(orient = 'records', force_ascii = False)),
+                'links': json.loads(edges_df.to_json(orient = 'records', force_ascii = False))
             }
 
-        return json.dumps(json_final)
+        return json.dumps(json_final, ensure_ascii = False)
 
 
     def _get_one_level_subgraph_graphframes(self, node_id, _testing=False):
@@ -455,7 +455,7 @@ class MoebiusAnywidget(anywidget.AnyWidget):
 
             json_final = {'nodes' : nodes, 'links' : edges}
 
-            return json.dumps(json_final, ensure_ascii=False)
+            return json.dumps(json_final, ensure_ascii = False)
             ```
 
         Args:
