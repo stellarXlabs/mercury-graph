@@ -18,6 +18,10 @@ class MoebiusAnywidget(anywidget.AnyWidget):
     MoebiusAnywidget class for visualizing graphs creating an anywidget that uses JavaScript and HTML.
     Note: It is recommended to use wrapper class Moebius.
 
+    **Important**: This class requires: anywidget, traitlets and IPython.display!! These packages are not mandatory
+    for the rest of the library, since you may not be intereseted in visualizing graphs. If you want to use this
+    class, you need to install these packages.
+
     Args:
         G (Graph):          The graph to be visualized.
         initial_id (str): The id of the node to start the visualization.
@@ -497,6 +501,10 @@ class MoebiusAnywidget(anywidget.AnyWidget):
 class Moebius(MoebiusAnywidget):
     """
     Moebius class for visualizing graphs using an anywidget.
+
+    **Important**: This class requires: anywidget, traitlets and IPython.display!! These packages are not mandatory
+    for the rest of the library, since you may not be intereseted in visualizing graphs. If you want to use this
+    class, you need to install these packages.
 
     Usage:
         ```python
