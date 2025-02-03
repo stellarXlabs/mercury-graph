@@ -131,6 +131,20 @@ class MoebiusAnywidget(anywidget.AnyWidget):
 
 
     def generate_color_palette(self, cats, hue = 0, sat = 0.7, light = 0.5):
+        """
+        Generates a color palette for the given categories. This can be used in combination with `node_or_edge_config` to generate
+        the dictionary expected by the `colors` argument with colors that cover the whole 0..1 hue range.
+
+        Args:
+            cats (iterable): An iterable of categories for which the color palette is to be generated.
+            hue (float, optional): The base hue that is added to all the colors in the color palette. It must be in range, 0..1, all the
+            resulting hue values will be kept modulo 1.0. Default is 0 (no shift).
+            sat (float, optional): The saturation level for the colors. Default is 0.7. Range is 0..1.
+            light (float, optional): The lightness level for the colors. Default is 0.5. Range is 0..1.
+
+        Returns:
+            dict: A dictionary where keys are categories and values are hex color codes.
+        """
         cats = set(cats)
         cols = {}
         N = len(cats)
@@ -452,6 +466,17 @@ class MoebiusAnywidget(anywidget.AnyWidget):
 
 
     def _hsl_to_rgb(self, h, s, l):
+        """
+        Convert HSL (Hue, Saturation, Lightness) color space to RGB (Red, Green, Blue) color space.
+
+        Parameters:
+        h (float): Hue value, should be between 0 and 1.
+        s (float): Saturation value, should be between 0 and 1.
+        l (float): Lightness value, should be between 0 and 1.
+
+        Returns:
+        tuple: A tuple containing the RGB values (r, g, b), each ranging from 0 to 255.
+        """
         def hue_to_rgb(p, q, t):
             if t < 0: t += 1
             if t > 1: t -= 1
