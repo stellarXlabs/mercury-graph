@@ -75,7 +75,7 @@ class MoebiusAnywidget(anywidget.AnyWidget):
                     // Set up shared state or event handlers.
                     return () => {{
                     // Optional: Called when the widget is destroyed.
-                    }} 
+                    }}
                 }},
                 render({{ model, el }}) {{
                     // Render the widget's view into the el HTMLElement.
@@ -128,6 +128,23 @@ class MoebiusAnywidget(anywidget.AnyWidget):
         """
 
         return self._get_adjacent_nodes_moebius(item)
+
+
+    def generate_color_palette(self, cats, hue = 0, sat = 0.7, light = 0.5):
+        cats = set(cats)
+        cols = {}
+        N = len(cats)
+        for i, cat in enumerate(cats):
+            h = (i/N + hue) % 1.0
+            s = sat
+            l = light
+
+            r, g, b = self.hsl_to_rgb(h, s, l)
+
+            hex_color = '#%02x%02X%02x' % (r, g, b)
+            cols[cat] = hex_color
+
+        return cols
 
 
     def node_or_edge_config(self, text_is = None, color_is = None, colors = None, size_is = None, size_range = None, size_scale = 'linear'):
@@ -432,6 +449,25 @@ class MoebiusAnywidget(anywidget.AnyWidget):
         df_json = df.to_json(orient = 'records', force_ascii = True, date_format = 'iso')
 
         return json.loads(df_json)
+
+
+    def _hsl_to_rgb(self, h, s, l):
+        def hue_to_rgb(p, q, t):
+            if t < 0: t += 1
+            if t > 1: t -= 1
+            if t < 1/6: return p + (q - p)*6*t
+            if t < 1/2: return q
+            if t < 2/3: return p + (q - p)*(2/3 - t)*6
+            return p
+
+        q = l + s - l*s if l < 0.5 else l + s - l*s
+        p = 2*l - q
+        r = hue_to_rgb(p, q, h + 1/3)
+        g = hue_to_rgb(p, q, h)
+        b = hue_to_rgb(p, q, h - 1/3)
+
+        return int(255*r), int(255*g), int(255*b)
+
 
 class Moebius(MoebiusAnywidget):
     """
