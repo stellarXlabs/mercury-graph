@@ -157,7 +157,7 @@ class MoebiusAnywidget(anywidget.AnyWidget):
             s = sat
             l = light
 
-            r, g, b = self.hsl_to_rgb(h, s, l)
+            r, g, b = self._hsl_to_rgb(h, s, l)
 
             hex_color = '#%02x%02X%02x' % (r, g, b)
             cols[cat] = hex_color
