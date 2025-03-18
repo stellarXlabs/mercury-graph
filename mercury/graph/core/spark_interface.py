@@ -117,7 +117,7 @@ class SparkInterface:
 
     @property
     def type_spark_dataframe(self):
-        return pyspark.sql.dataframe.DataFrame
+        return [pyspark.sql.dataframe.DataFrame, pyspark.sql.connect.DataFrame]
 
 
     @property
