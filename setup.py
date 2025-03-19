@@ -1,13 +1,12 @@
-import os, shutil
-
+import os
+import shutil
 
 # Move tutorials inside mercury.graph before packaging
 if os.path.exists('tutorials'):
     shutil.move('tutorials', 'mercury/graph/tutorials')
 
 
-from setuptools import setup, find_packages
-
+from setuptools import find_packages, setup
 
 setup_args = dict(
 	name				 = 'mercury-graph',

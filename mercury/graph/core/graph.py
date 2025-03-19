@@ -192,16 +192,17 @@ class Graph:
         spark_int = SparkInterface()
 
         if pyspark_installed and graphframes_installed:
+            print("pyspark_installed and graphframes_installed", type(data))
             if type(data) in spark_int.type_spark_dataframe:
                 self._from_dataframe(data, nodes, keys)
                 return
 
             if type(data) == spark_int.type_graphframe:
+                print("type(data) == spark_int.type_graphframe")
                 self._from_graphframes(data)
                 return
 
         raise ValueError('Invalid input data. (Expected: pandas DataFrame, a networkx Graph, a pyspark DataFrame, a graphframes Graph.)')
-
 
     def __str__(self):
         txt = []
@@ -214,10 +215,8 @@ class Graph:
 
         return '\n'.join(txt)
 
-
     def __repr__(self):
         return 'Graph(%s)' % ', '.join('%s = %s' % (k, v) for k, v in self._init_values.items())
-
 
     @property
     def nodes(self):
@@ -229,7 +228,6 @@ class Graph:
         """
         return NodeIterator(self)
 
-
     @property
     def edges(self):
         """
@@ -239,7 +237,6 @@ class Graph:
             (EdgeIterator): An iterator object that allows iterating over the edges in the graph.
         """
         return EdgeIterator(self)
-
 
     @property
     def networkx(self):
@@ -256,7 +253,6 @@ class Graph:
 
         return self._as_networkx
 
-
     @property
     def graphframe(self):
         """
@@ -271,7 +267,6 @@ class Graph:
             self._as_graphframe = self._to_graphframe()
 
         return self._as_graphframe
-
 
     @property
     def dgl(self):
@@ -288,7 +283,6 @@ class Graph:
 
         return self._as_dgl
 
-
     @property
     def degree(self):
         """
@@ -297,7 +291,6 @@ class Graph:
         if self._degree is None:
             self._degree = self._calculate_degree()
         return self._degree
-
 
     @property
     def in_degree(self):
@@ -308,7 +301,6 @@ class Graph:
             self._in_degree = self._calculate_in_degree()
         return self._in_degree
 
-
     @property
     def out_degree(self):
         """
@@ -317,7 +309,6 @@ class Graph:
         if self._out_degree is None:
             self._out_degree = self._calculate_out_degree()
         return self._out_degree
-
 
     @property
     def closeness_centrality(self):
@@ -328,7 +319,6 @@ class Graph:
             self._closeness_centrality = self._calculate_closeness_centrality()
         return self._closeness_centrality
 
-
     @property
     def betweenness_centrality(self):
         """
@@ -337,7 +327,6 @@ class Graph:
         if self._betweenness_centrality is None:
             self._betweenness_centrality = self._calculate_betweenness_centrality()
         return self._betweenness_centrality
-
 
     @property
     def pagerank(self):
@@ -348,7 +337,6 @@ class Graph:
             self._pagerank = self._calculate_pagerank()
         return self._pagerank
 
-
     @property
     def connected_components(self):
         """
@@ -357,7 +345,6 @@ class Graph:
         if self._connected_components is None:
             self._connected_components = self._calculate_connected_components()
         return self._connected_components
-
 
     @property
     def nodes_colnames(self):
@@ -368,7 +355,6 @@ class Graph:
             self._nodes_colnames = self._calculate_nodes_colnames()
         return self._nodes_colnames
 
-
     @property
     def edges_colnames(self):
         """
@@ -377,7 +363,6 @@ class Graph:
         if self._edges_colnames is None:
             self._edges_colnames = self._calculate_edges_colnames()
         return self._edges_colnames
-
 
     @property
     def number_of_nodes(self):
@@ -389,7 +374,6 @@ class Graph:
         """
         return self._number_of_nodes
 
-
     @property
     def number_of_edges(self):
         """
@@ -399,7 +383,6 @@ class Graph:
             (int): The number of edges in the graph.
         """
         return self._number_of_edges
-
 
     @property
     def is_directed(self):
@@ -414,7 +397,6 @@ class Graph:
         """
         return self._is_directed
 
-
     @property
     def is_weighted(self):
         """
@@ -424,7 +406,6 @@ class Graph:
         name is passed in the `dict` argument as the 'weight' key.
         """
         return self._is_weighted
-
 
     def nodes_as_pandas(self):
         """
@@ -444,7 +425,6 @@ class Graph:
 
         return self.graphframe.vertices.toPandas()
 
-
     def edges_as_pandas(self):
         """
         Returns the edges as a pandas DataFrame.
@@ -463,7 +443,6 @@ class Graph:
 
         return self.graphframe.edges.toPandas()
 
-
     def nodes_as_dataframe(self):
         """
         Returns the nodes as a pyspark DataFrame.
@@ -477,7 +456,6 @@ class Graph:
 
         return SparkInterface().spark.createDataFrame(self.nodes_as_pandas())
 
-
     def edges_as_dataframe(self):
         """
         Returns the edges as a pyspark DataFrame.
@@ -490,7 +468,6 @@ class Graph:
             return self._as_graphframe.edges
 
         return SparkInterface().spark.createDataFrame(self.edges_as_pandas())
-
 
     def _from_pandas(self, edges, nodes, keys):
         """ This internal method extends the constructor to accept a pandas DataFrame as input.
@@ -528,7 +505,6 @@ class Graph:
                 g.add_node(row[id], **attr)
 
         self._from_networkx(g)
-
 
     def _from_dataframe(self, edges, nodes, keys):
         """ This internal method extends the constructor to accept a pyspark DataFrame as input.
@@ -573,7 +549,6 @@ class Graph:
 
         self._from_graphframes(g, directed)
 
-
     def _from_networkx(self, graph):
         """ This internal method extends the constructor to accept a networkx graph as input.
 
@@ -585,7 +560,6 @@ class Graph:
         self._is_directed = nx.is_directed(graph)
         self._is_weighted = 'weight' in self.edges_colnames
 
-
     def _from_graphframes(self, graph, directed = True):
         """ This internal method extends the constructor to accept a graphframes graph as input.
 
@@ -596,7 +570,6 @@ class Graph:
         self._number_of_edges = graph.edges.count()
         self._is_directed = directed
         self._is_weighted = 'weight' in self.edges_colnames
-
 
     def _to_networkx(self):
         """ This internal method handles the logic of a property. It returns the networkx graph that already exists
@@ -617,7 +590,6 @@ class Graph:
 
         return g
 
-
     def _to_graphframe(self):
         """ This internal method handles the logic of a property. It returns the graphframes graph that already exists
         or converts it from the networkx graph if not."""
@@ -626,7 +598,6 @@ class Graph:
         edges = self.edges_as_dataframe()
 
         return SparkInterface().graphframes.GraphFrame(nodes, edges)
-
 
     def _to_dgl(self):
         """ This internal method handles the logic of a property. It returns the dgl graph that already exists
@@ -647,7 +618,6 @@ class Graph:
 
         return self._as_dgl
 
-
     def _calculate_degree(self):
         """ This internal method handles the logic of a property. It returns the degree of each node in the graph."""
 
@@ -655,7 +625,6 @@ class Graph:
             return dict(self._as_networkx.degree())
 
         return self._fill_node_zeros({row['id']: row['degree'] for row in self.graphframe.degrees.collect()})
-
 
     def _calculate_in_degree(self):
         """ This internal method handles the logic of a property. It returns the in-degree of each node in the graph."""
@@ -665,7 +634,6 @@ class Graph:
 
         return self._fill_node_zeros({row['id']: row['inDegree'] for row in self.graphframe.inDegrees.collect()})
 
-
     def _calculate_out_degree(self):
         """ This internal method handles the logic of a property. It returns the out-degree of each node in the graph."""
 
@@ -673,7 +641,6 @@ class Graph:
             return dict(self._as_networkx.out_degree())
 
         return self._fill_node_zeros({row['id']: row['outDegree'] for row in self.graphframe.outDegrees.collect()})
-
 
     def _fill_node_zeros(self, d):
         """
@@ -685,7 +652,6 @@ class Graph:
                 d[node['id']] = 0
 
         return d
-
 
     def _calculate_closeness_centrality(self):
         """
@@ -704,7 +670,6 @@ class Graph:
 
         return {row['id']: row['cc'] for row in cc.collect()}
 
-
     def _calculate_betweenness_centrality(self):
         """
         This internal method handles the logic of a property. It returns the betweenness centrality of each node in the graph as a Python
@@ -712,7 +677,6 @@ class Graph:
         is too computationally expensive to use on large graphs.
         """
         return nx.betweenness_centrality(self.networkx)
-
 
     def _calculate_pagerank(self):
         """
@@ -724,7 +688,6 @@ class Graph:
         pr = self.graphframe.pageRank(resetProbability = 0.15, tol = 0.01).vertices
 
         return {row['id']: row['pagerank'] for row in pr.collect()}
-
 
     def _calculate_connected_components(self):
         """
@@ -756,7 +719,6 @@ class Graph:
 
         return cc
 
-
     def _calculate_nodes_colnames(self):
         """ This internal method returns the column names of the nodes DataFrame. """
 
@@ -767,7 +729,6 @@ class Graph:
             return l
 
         return self.graphframe.vertices.columns
-
 
     def _calculate_edges_colnames(self):
         """ This internal method returns the column names of the edges DataFrame. """
