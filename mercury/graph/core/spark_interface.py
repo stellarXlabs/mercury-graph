@@ -108,7 +108,13 @@ class SparkInterface:
 
     @property
     def type_spark_dataframe(self):
-        return [pyspark.sql.dataframe.DataFrame, pyspark.sql.connect.dataframe.DataFrame]
+        ret = [pyspark.sql.dataframe.DataFrame]
+        try:
+            ret.append(pyspark.sql.connect.DataFrame)
+        except AttributeError:
+            pass
+
+        return ret
 
     @property
     def type_graphframe(self):
