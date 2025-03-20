@@ -5,27 +5,26 @@ pyspark_installed = False
 graphframes_installed = False
 dgl_installed = False
 
-if importlib.util.find_spec('pyspark') is not None:
+if importlib.util.find_spec("pyspark") is not None:
     pyspark_installed = True
 
     import pyspark
 
-    if importlib.util.find_spec('graphframes') is not None:
+    if importlib.util.find_spec("graphframes") is not None:
         graphframes_installed = True
 
         import graphframes as gf
 
-if importlib.util.find_spec('dgl') is not None:
-	dgl_installed = True
+if importlib.util.find_spec("dgl") is not None:
+    dgl_installed = True
 
-	import dgl
+    import dgl
 
 
 # Define the Spark configuration options by default
 default_spark_config = {
-    'appName': 'LocalSparkApp',
-    'master': 'local[*]',
-
+    "appName": "LocalSparkApp",
+    "master": "local[*]",
     # Add other configurations as needed
     # 'spark.executor.memory': '2g',
     # 'spark.driver.memory': '1g',
@@ -61,9 +60,9 @@ class SparkInterface:
             If not provided, the configuration in the global variable `default_spark_config` will be used.
     """
 
-    _spark_session = None   # Class variable to hold the shared Spark session
-    _graphframes = None     # Class variable to hold the shared graphframes namespace
-    _dgl = None			    # Class variable to hold the shared dgl namespace
+    _spark_session = None  # Class variable to hold the shared Spark session
+    _graphframes = None  # Class variable to hold the shared graphframes namespace
+    _dgl = None  # Class variable to hold the shared dgl namespace
 
     def __init__(self, config=None, session=None):
         if SparkInterface._spark_session is None:
@@ -111,7 +110,13 @@ class SparkInterface:
 
     @property
     def type_spark_dataframe(self):
-        return pyspark.sql.dataframe.DataFrame
+        ret = [pyspark.sql.dataframe.DataFrame]
+        try:
+            ret.append(pyspark.sql.connect.DataFrame)
+        except AttributeError:
+            pass
+
+        return ret
 
     @property
     def type_graphframe(self):
